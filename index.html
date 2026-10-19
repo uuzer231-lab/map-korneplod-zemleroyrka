@@ -4,45 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Карта: Виктор Корнеплод и Анастасия Землеройка</title>
-    <!-- CDNJS Leaflet (стабильная загрузка) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
         html, body {
             width: 100%;
             height: 100%;
+            margin: 0;
+            padding: 0;
             overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: #0f172a;
-            color: #f8fafc;
-        }
-        /* Фиксация карты на весь экран со светлым фоном-заглушкой */
-        #map {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 1;
-            background: #cbd5e1 !important;
-        }
-        .leaflet-container {
-            background: #cbd5e1 !important;
         }
 
-        /* Кнопки управления */
+        #map {
+            width: 100%;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Кнопки сверху */
         .top-controls {
-            position: fixed;
+            position: absolute;
             top: 16px;
             right: 16px;
             z-index: 1000;
             display: flex;
             gap: 8px;
         }
+
         .btn-ui {
             background: #1e293b;
             color: #f59e0b;
@@ -52,16 +45,15 @@
             font-weight: 600;
             font-size: 14px;
             cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
-        .btn-ui:hover {
-            background: #334155;
-        }
-        .btn-ui.satellite-active {
+
+        .btn-ui.active {
             color: #38bdf8;
+            border-color: #38bdf8;
         }
 
         /* Модальные окна */
@@ -78,10 +70,13 @@
             justify-content: center;
             align-items: center;
             padding: 16px;
+            box-sizing: border-box;
         }
+
         .modal-overlay.active {
             display: flex;
         }
+
         .modal-box {
             background: #1e293b;
             border: 1px solid #334155;
@@ -90,39 +85,40 @@
             max-width: 400px;
             padding: 20px;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-            position: relative;
+            color: #f8fafc;
             max-height: 90vh;
             overflow-y: auto;
         }
+
         .modal-title {
             font-size: 18px;
             font-weight: 700;
             margin-bottom: 16px;
-            color: #f8fafc;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
+
         .close-btn {
             background: none;
             border: none;
             color: #94a3b8;
             font-size: 24px;
             cursor: pointer;
-            padding: 4px 8px;
+            padding: 0 8px;
         }
-        .close-btn:hover {
-            color: #f8fafc;
-        }
+
         .form-group {
             margin-bottom: 12px;
         }
+
         .form-group label {
             display: block;
             font-size: 13px;
             color: #94a3b8;
             margin-bottom: 6px;
         }
+
         .form-group input, .form-group select {
             width: 100%;
             padding: 10px 12px;
@@ -132,10 +128,9 @@
             color: #f8fafc;
             font-size: 14px;
             outline: none;
+            box-sizing: border-box;
         }
-        .form-group input:focus {
-            border-color: #3b82f6;
-        }
+
         .btn-submit {
             width: 100%;
             padding: 12px;
@@ -147,9 +142,7 @@
             cursor: pointer;
             margin-top: 8px;
         }
-        .btn-submit:hover {
-            background: #1d4ed8;
-        }
+
         .btn-map-pick {
             width: 100%;
             padding: 10px;
@@ -161,11 +154,12 @@
             cursor: pointer;
             margin-bottom: 12px;
         }
+
         .btn-map-pick.active {
             background: #d97706;
             color: white;
-            border-color: #b45309;
         }
+
         .tabs {
             display: flex;
             gap: 6px;
@@ -174,6 +168,7 @@
             padding: 4px;
             border-radius: 8px;
         }
+
         .tab-btn {
             flex: 1;
             background: none;
@@ -185,16 +180,20 @@
             cursor: pointer;
             border-radius: 6px;
         }
+
         .tab-btn.active {
             background: #334155;
             color: #f8fafc;
         }
+
         .tab-content {
             display: none;
         }
+
         .tab-content.active {
             display: block;
         }
+
         .error-msg {
             color: #ef4444;
             font-size: 12px;
@@ -202,58 +201,45 @@
             display: none;
         }
 
-        /* Маркеры персонажей */
+        /* Стиль маркеров */
         .custom-emoji-icon {
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(30, 41, 59, 0.9);
+            background: rgba(30, 41, 59, 0.95);
             border: 2px solid #3b82f6;
             border-radius: 50%;
             font-size: 22px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-        }
-        .custom-emoji-icon.viktor {
-            border-color: #f97316;
-        }
-        .custom-emoji-icon.anastasia {
-            border-color: #ec4899;
+            width: 40px;
+            height: 40px;
         }
 
-        /* Popups */
-        .leaflet-popup-content-wrapper {
-            background: #1e293b !important;
-            color: #f8fafc !important;
-            border-radius: 12px !important;
-            border: 1px solid #334155;
+        .custom-emoji-icon.viktor { border-color: #f97316; }
+        .custom-emoji-icon.anastasia { border-color: #ec4899; }
+
+        .popup-card {
             padding: 4px;
         }
-        .leaflet-popup-tip {
-            background: #1e293b !important;
-        }
-        .popup-card {
-            padding: 6px;
-        }
+
         .popup-card h3 {
-            font-size: 16px;
-            margin-bottom: 6px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
+            font-size: 15px;
+            margin: 0 0 6px 0;
         }
+
         .popup-card p {
             font-size: 12px;
-            color: #94a3b8;
-            margin-bottom: 4px;
+            color: #64748b;
+            margin: 0 0 4px 0;
         }
+
         .popup-card .coords {
             font-family: monospace;
-            color: #38bdf8;
-            background: #0f172a;
-            padding: 4px 6px;
+            color: #0284c7;
+            background: #f1f5f9;
+            padding: 2px 6px;
             border-radius: 4px;
             display: inline-block;
-            margin-top: 4px;
         }
     </style>
 </head>
@@ -357,207 +343,251 @@
         </div>
     </div>
 
-    <!-- CDNJS Leaflet JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const ADMIN_PASSWORD = "KorneplodViktor_2024000";
+        const ADMIN_PASSWORD = "KorneplodViktor_2024000";
 
-            const defaultData = {
-                viktor: {
-                    name: "Виктор Корнеплод",
-                    emoji: "🧔",
-                    lat: 49.792,
-                    lng: 23.153,
-                    updatedAt: Date.now(),
-                    moving: false,
-                    fromLat: 49.792,
-                    fromLng: 23.153,
-                    toLat: 49.792,
-                    toLng: 23.153,
-                    startTime: Date.now(),
-                    duration: 1000
-                },
-                anastasia: {
-                    name: "Анастасия Землеройка",
-                    emoji: "🧓",
-                    lat: 49.798,
-                    lng: 23.160,
-                    updatedAt: Date.now(),
-                    moving: false,
-                    fromLat: 49.798,
-                    fromLng: 23.160,
-                    toLat: 49.798,
-                    toLng: 23.160,
-                    startTime: Date.now(),
-                    duration: 1000
-                }
-            };
-
-            function loadData() {
-                const saved = localStorage.getItem("char_locations_data_v6");
-                if (saved) {
-                    try { return JSON.parse(saved); } catch (e) { return defaultData; }
-                }
-                return defaultData;
+        const defaultData = {
+            viktor: {
+                name: "Виктор Корнеплод",
+                emoji: "🧔",
+                lat: 49.792,
+                lng: 23.153,
+                updatedAt: Date.now(),
+                moving: false,
+                fromLat: 49.792,
+                fromLng: 23.153,
+                toLat: 49.792,
+                toLng: 23.153,
+                startTime: Date.now(),
+                duration: 1000
+            },
+            anastasia: {
+                name: "Анастасия Землеройка",
+                emoji: "🧓",
+                lat: 49.798,
+                lng: 23.160,
+                updatedAt: Date.now(),
+                moving: false,
+                fromLat: 49.798,
+                fromLng: 23.160,
+                toLat: 49.798,
+                toLng: 23.160,
+                startTime: Date.now(),
+                duration: 1000
             }
+        };
 
-            function saveData(data) {
-                localStorage.setItem("char_locations_data_v6", JSON.stringify(data));
+        function loadData() {
+            const saved = localStorage.getItem("char_locations_data_v7");
+            if (saved) {
+                try { return JSON.parse(saved); } catch (e) { return defaultData; }
             }
+            return defaultData;
+        }
 
-            let charData = loadData();
-            let isAuthenticated = false;
-            let isPickMode = false;
-            let isSatellite = false;
-            let activeTab = 'teleport';
+        function saveData(data) {
+            localStorage.setItem("char_locations_data_v7", JSON.stringify(data));
+        }
 
-            function getRelativeTime(timestamp) {
-                const diff = Math.floor((Date.now() - timestamp) / 1000);
-                if (diff < 30) return "только что";
-                if (diff < 60) return `${diff} сек. назад`;
-                const mins = Math.floor(diff / 60);
-                if (mins < 60) {
-                    let form = 'минут назад';
-                    if (mins % 10 === 1 && mins !== 11) form = 'минуту назад';
-                    else if ([2,3,4].includes(mins % 10) && ![12,13,14].includes(mins)) form = 'минуты назад';
-                    return `${mins} ${form}`;
-                }
-                const hours = Math.floor(mins / 60);
-                if (hours < 24) {
-                    let form = 'часов назад';
-                    if ([2,3,4].includes(hours % 10) && ![12,13,14].includes(hours)) form = 'часа назад';
-                    else if (hours === 1) form = 'час назад';
-                    return `${hours} ${form}`;
-                }
-                const days = Math.floor(hours / 24);
-                return `${days} дн. назад`;
+        let charData = loadData();
+        let isAuthenticated = false;
+        let isPickMode = false;
+        let isSatellite = false;
+        let activeTab = 'teleport';
+
+        function getRelativeTime(timestamp) {
+            const diff = Math.floor((Date.now() - timestamp) / 1000);
+            if (diff < 30) return "только что";
+            if (diff < 60) return `${diff} сек. назад`;
+            const mins = Math.floor(diff / 60);
+            if (mins < 60) return `${mins} мин. назад`;
+            const hours = Math.floor(mins / 60);
+            if (hours < 24) return `${hours} ч. назад`;
+            const days = Math.floor(hours / 24);
+            return `${days} дн. назад`;
+        }
+
+        // Инициализация карты
+        const map = L.map('map', { 
+            zoomControl: false,
+            fadeAnimation: false
+        }).setView([49.795, 23.156], 13);
+
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+        // Публичные быстрые тайлы
+        const streetLayer = L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19,
+            subdomains: 'abcd',
+            attribution: '&copy; CartoDB'
+        });
+
+        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 18,
+            attribution: '&copy; Esri'
+        });
+
+        streetLayer.addTo(map);
+
+        // Перерисовка при открытии
+        setTimeout(() => { map.invalidateSize(); }, 200);
+
+        const toggleLayerBtn = document.getElementById('toggleLayerBtn');
+        toggleLayerBtn.addEventListener('click', () => {
+            isSatellite = !isSatellite;
+            if (isSatellite) {
+                map.removeLayer(streetLayer);
+                satelliteLayer.addTo(map);
+                toggleLayerBtn.textContent = "🗺️ Обычная";
+                toggleLayerBtn.classList.add('active');
+            } else {
+                map.removeLayer(satelliteLayer);
+                streetLayer.addTo(map);
+                toggleLayerBtn.textContent = "🛰️ Спутник";
+                toggleLayerBtn.classList.remove('active');
             }
+        });
 
-            // Инициализация карты
-            const map = L.map('map', { zoomControl: false }).setView([49.795, 23.156], 13);
-            L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-            const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '&copy; OpenStreetMap'
+        function createEmojiIcon(emoji, className) {
+            return L.divIcon({
+                className: `custom-emoji-icon ${className}`,
+                html: `<span>${emoji}</span>`,
+                iconSize: [40, 40],
+                iconAnchor: [20, 20],
+                popupAnchor: [0, -20]
             });
+        }
 
-            const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                maxZoom: 19,
-                attribution: '&copy; Esri'
-            });
+        const markers = {};
 
-            streetLayer.addTo(map);
+        function initMarkers() {
+            const viktorIcon = createEmojiIcon(charData.viktor.emoji, 'viktor');
+            markers.viktor = L.marker([charData.viktor.lat, charData.viktor.lng], { icon: viktorIcon }).addTo(map);
+            updatePopup('viktor');
 
-            // Принудительное обновление размера карты
-            const fixMapSize = () => { map.invalidateSize(); };
-            fixMapSize();
-            setTimeout(fixMapSize, 200);
-            setTimeout(fixMapSize, 600);
-            window.addEventListener('resize', fixMapSize);
+            const anastasiaIcon = createEmojiIcon(charData.anastasia.emoji, 'anastasia');
+            markers.anastasia = L.marker([charData.anastasia.lat, charData.anastasia.lng], { icon: anastasiaIcon }).addTo(map);
+            updatePopup('anastasia');
+        }
 
-            const toggleLayerBtn = document.getElementById('toggleLayerBtn');
-            toggleLayerBtn.addEventListener('click', () => {
-                isSatellite = !isSatellite;
-                if (isSatellite) {
-                    map.removeLayer(streetLayer);
-                    satelliteLayer.addTo(map);
-                    toggleLayerBtn.textContent = "🗺️ Обычная";
-                    toggleLayerBtn.classList.add('satellite-active');
-                } else {
-                    map.removeLayer(satelliteLayer);
-                    streetLayer.addTo(map);
-                    toggleLayerBtn.textContent = "🛰️ Спутник";
-                    toggleLayerBtn.classList.remove('satellite-active');
-                }
-            });
+        function updatePopup(key) {
+            const item = charData[key];
+            const timeText = item.moving ? "🚶 в пути..." : getRelativeTime(item.updatedAt);
+            const content = `
+                <div class="popup-card">
+                    <h3>${item.emoji} ${item.name}</h3>
+                    <p>Обновлено: <b style="color: #d97706">${timeText}</b></p>
+                    <div class="coords">${item.lat.toFixed(5)}, ${item.lng.toFixed(5)}</div>
+                </div>
+            `;
+            markers[key].bindPopup(content);
+        }
 
-            function createEmojiIcon(emoji, className) {
-                return L.divIcon({
-                    className: `custom-emoji-icon ${className}`,
-                    html: `<span>${emoji}</span>`,
-                    iconSize: [40, 40],
-                    iconAnchor: [20, 20],
-                    popupAnchor: [0, -20]
-                });
-            }
+        initMarkers();
 
-            const markers = {};
+        // Анимация движения
+        setInterval(() => {
+            const now = Date.now();
+            let changed = false;
 
-            function initMarkers() {
-                const viktorIcon = createEmojiIcon(charData.viktor.emoji, 'viktor');
-                markers.viktor = L.marker([charData.viktor.lat, charData.viktor.lng], { icon: viktorIcon }).addTo(map);
-                updatePopup('viktor');
+            for (let key in charData) {
+                let item = charData[key];
+                if (item.moving) {
+                    const elapsed = now - item.startTime;
+                    const progress = Math.min(elapsed / item.duration, 1);
 
-                const anastasiaIcon = createEmojiIcon(charData.anastasia.emoji, 'anastasia');
-                markers.anastasia = L.marker([charData.anastasia.lat, charData.anastasia.lng], { icon: anastasiaIcon }).addTo(map);
-                updatePopup('anastasia');
-            }
+                    item.lat = item.fromLat + (item.toLat - item.fromLat) * progress;
+                    item.lng = item.fromLng + (item.toLng - item.fromLng) * progress;
 
-            function updatePopup(key) {
-                const item = charData[key];
-                const timeText = item.moving ? "🚶 в пути..." : getRelativeTime(item.updatedAt);
-                const content = `
-                    <div class="popup-card">
-                        <h3>${item.emoji} ${item.name}</h3>
-                        <p>Последнее обновление:</p>
-                        <p style="color: #f59e0b; font-weight: 500;">${timeText}</p>
-                        <div class="coords">${item.lat.toFixed(5)}, ${item.lng.toFixed(5)}</div>
-                    </div>
-                `;
-                markers[key].bindPopup(content);
-            }
-
-            initMarkers();
-
-            // Цикл движения персонажей
-            function gameLoop() {
-                const now = Date.now();
-                let changed = false;
-
-                for (let key in charData) {
-                    let item = charData[key];
-                    if (item.moving) {
-                        const elapsed = now - item.startTime;
-                        const progress = Math.min(elapsed / item.duration, 1);
-
-                        item.lat = item.fromLat + (item.toLat - item.fromLat) * progress;
-                        item.lng = item.fromLng + (item.toLng - item.fromLng) * progress;
-
-                        if (progress >= 1) {
-                            item.moving = false;
-                            item.lat = item.toLat;
-                            item.lng = item.toLng;
-                            item.updatedAt = now;
-                        }
-
-                        if (markers[key]) {
-                            markers[key].setLatLng([item.lat, item.lng]);
-                            updatePopup(key);
-                        }
-                        changed = true;
+                    if (progress >= 1) {
+                        item.moving = false;
+                        item.lat = item.toLat;
+                        item.lng = item.toLng;
+                        item.updatedAt = now;
                     }
-                }
 
-                if (changed) {
-                    saveData(charData);
+                    if (markers[key]) {
+                        markers[key].setLatLng([item.lat, item.lng]);
+                        updatePopup(key);
+                    }
+                    changed = true;
                 }
             }
-            setInterval(gameLoop, 300);
 
-            // Управление модальными окнами
-            const authModal = document.getElementById('authModal');
-            const adminPanelModal = document.getElementById('adminPanelModal');
-            const openAdminBtn = document.getElementById('openAdminBtn');
-            const authForm = document.getElementById('authForm');
-            const authError = document.getElementById('authError');
-            const passwordInput = document.getElementById('passwordInput');
-            const locationForm = document.getElementById('locationForm');
-            const routeForm = document.getElementById('routeForm');
-            
-            const characterSelect = document.getElementById('characterSelect');
-            const latInput = document.getElementById('latInput');
-            const lngInput = document.getElementById('lngInput');
+            if (changed) saveData(charData);
+        }, 200);
 
-            const routeCharacterSelect = docume
+        // Модалки
+        const authModal = document.getElementById('authModal');
+        const adminPanelModal = document.getElementById('adminPanelModal');
+        const openAdminBtn = document.getElementById('openAdminBtn');
+        const authForm = document.getElementById('authForm');
+        const authError = document.getElementById('authError');
+        const passwordInput = document.getElementById('passwordInput');
+        const locationForm = document.getElementById('locationForm');
+        const routeForm = document.getElementById('routeForm');
+        
+        const characterSelect = document.getElementById('characterSelect');
+        const latInput = document.getElementById('latInput');
+        const lngInput = document.getElementById('lngInput');
+
+        const routeCharacterSelect = document.getElementById('routeCharacterSelect');
+        const routeLatInput = document.getElementById('routeLatInput');
+        const routeLngInput = document.getElementById('routeLngInput');
+        const routeDurationInput = document.getElementById('routeDurationInput');
+
+        const togglePickMode = document.getElementById('togglePickMode');
+
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                activeTab = btn.getAttribute('data-tab');
+                document.getElementById(`${activeTab}-content`).classList.add('active');
+            });
+        });
+
+        openAdminBtn.addEventListener('click', () => {
+            if (isAuthenticated) openAdminPanel();
+            else authModal.classList.add('active');
+        });
+
+        document.querySelectorAll('.close-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const modalId = btn.getAttribute('data-close');
+                document.getElementById(modalId).classList.remove('active');
+            });
+        });
+
+        authForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (passwordInput.value === ADMIN_PASSWORD) {
+                isAuthenticated = true;
+                authError.style.display = 'none';
+                passwordInput.value = '';
+                authModal.classList.remove('active');
+                openAdminPanel();
+            } else {
+                authError.style.display = 'block';
+            }
+        });
+
+        function openAdminPanel() {
+            adminPanelModal.classList.add('active');
+            fillInputs();
+        }
+
+        function fillInputs() {
+            const key1 = characterSelect.value;
+            latInput.value = charData[key1].lat;
+            lngInput.value = charData[key1].lng;
+
+            const key2 = routeCharacterSelect.value;
+            routeLatInput.value = charData[key2].lat;
+            routeLngInput.value = charData[key2].lng;
+        }
+
+        characterSelect.addEventListen
