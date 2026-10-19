@@ -56,7 +56,7 @@
             background: #334155;
             transform: translateY(-2px);
         }
-        .btn-ui.satellite-active {
+        .btn-ui.hybrid-active {
             color: #38bdf8;
         }
         /* Модальные окна */
@@ -229,7 +229,7 @@
     <div id="map"></div>
 
     <div class="top-controls">
-        <button class="btn-ui" id="toggleLayerBtn">🛰️ Спутник</button>
+        <button class="btn-ui" id="toggleLayerBtn">🛰️ Гибрид</button>
         <button class="btn-ui" id="openAdminBtn">⚙️ Админка</button>
     </div>
 
@@ -322,42 +322,43 @@
         let charData = loadData();
         let isAuthenticated = false;
         let isPickMode = false;
-        let isSatellite = false;
+        let isHybrid = false;
 
         // Инициализация карты
         const map = L.map('map', { zoomControl: false }).setView([49.795, 23.156], 13);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        // Слои карт Google
+        // Слои карт Google (Обычная и Гибрид со спутника + надписи)
         const streetLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
             maxZoom: 20,
             subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
             attribution: '&copy; Google Maps'
         });
 
-        const satelliteLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+        // lyrs=y — Гибридный слой (спутниковые снимки + дороги и названия городов)
+        const hybridLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
             maxZoom: 20,
             subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-            attribution: '&copy; Google Satellite'
+            attribution: '&copy; Google Hybrid'
         });
 
         // Установка карты по умолчанию
         streetLayer.addTo(map);
 
-        // Кнопка переключения слоев (Спутник / Обычная)
+        // Кнопка переключения слоев (Гибрид / Обычная)
         const toggleLayerBtn = document.getElementById('toggleLayerBtn');
         toggleLayerBtn.addEventListener('click', () => {
-            isSatellite = !isSatellite;
-            if (isSatellite) {
+            isHybrid = !isHybrid;
+            if (isHybrid) {
                 map.removeLayer(streetLayer);
-                satelliteLayer.addTo(map);
+                hybridLayer.addTo(map);
                 toggleLayerBtn.textContent = "🗺️ Обычная";
-                toggleLayerBtn.classList.add('satellite-active');
+                toggleLayerBtn.classList.add('hybrid-active');
             } else {
-                map.removeLayer(satelliteLayer);
+                map.removeLayer(hybridLayer);
                 streetLayer.addTo(map);
-                toggleLayerBtn.textContent = "🛰️ Спутник";
-                toggleLayerBtn.classList.remove('satellite-active');
+                toggleLayerBtn.textContent = "🛰️ Гибрид";
+                toggleLayerBtn.classList.remove('hybrid-active');
             }
         });
 
