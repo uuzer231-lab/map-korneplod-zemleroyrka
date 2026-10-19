@@ -1,649 +1,437 @@
+```html
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Світло Львівщина</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Карта: Виктор Корнеплод и Анастасия Землеройка</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" integrity="sha512-Zcn6BhR/aU7J2D1Gv3f+31WzN70Y5k1v+f5vG6p+F/Gj1R9+6aE8w0v3h2M6z8Z1y4A2r4=" crossorigin=""/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js" integrity="sha512-BwH5T19/z2q1g7wO4l1b5h31WzN70Y5k1v+f5vG6p+F/Gj1R9+6aE8w0v3h2M6z8Z1y4A2r4=" crossorigin=""></script>
+    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --bg: #090d16;
-            --surface: #131b2e;
-            --surface-card: #1b2640;
-            --border: #2a3959;
-            --text-main: #f1f5f9;
-            --text-muted: #94a3b8;
-            --green: #10b981;
-            --green-glow: rgba(16, 185, 129, 0.2);
-            --red: #f43f5e;
-            --red-glow: rgba(244, 63, 94, 0.2);
-            --accent: #6366f1;
-            --radius: 24px;
-        }
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-        * {
-            box-sizing: border-box;
+    <style>
+        html, body {
+            height: 100%;
+            width: 100%;
             margin: 0;
             padding: 0;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-        }
-
-        body {
-            background-color: var(--bg);
-            color: var(--text-main);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            padding: 24px 16px;
-        }
-
-        .app {
-            width: 100%;
-            max-width: 520px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .header {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .logo-icon {
-            width: 44px;
-            height: 44px;
-            background: rgba(99, 102, 241, 0.15);
-            color: var(--accent);
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-        }
-
-        .logo-text h1 {
-            font-size: 1.1rem;
-            font-weight: 700;
-        }
-
-        .logo-text p {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-
-        .update-pill {
-            background: var(--surface-card);
-            border: 1px solid var(--border);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        .controls {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .section-label {
-            font-size: 0.85rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .groups-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-        }
-
-        .group-btn {
-            background: var(--surface-card);
-            border: 1px solid var(--border);
-            color: var(--text-main);
-            padding: 10px 6px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            font-weight: 700;
-            cursor: pointer;
-            text-align: center;
-            user-select: none;
-            transition: all 0.2s;
-        }
-
-        .group-btn.active {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: #fff;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-        }
-
-        .group-btn.test-btn {
-            grid-column: span 4;
-            background: rgba(245, 158, 11, 0.15);
-            border-color: #f59e0b;
-            color: #f59e0b;
-        }
-
-        .group-btn.test-btn.active {
-            background: #f59e0b;
-            color: #000;
-        }
-
-        .days-switch {
-            display: flex;
-            background: var(--surface-card);
-            padding: 4px;
-            border-radius: 16px;
-            border: 1px solid var(--border);
-        }
-
-        .day-btn {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            padding: 10px;
-            border-radius: 12px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .day-btn.active {
-            background: var(--accent);
-            color: #fff;
-        }
-
-        .main-status {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 28px 20px;
-            text-align: center;
-            position: relative;
             overflow: hidden;
-            transition: border-color 0.3s;
+            font-family: 'Inter', sans-serif;
+            background-color: #020617;
         }
-
-        .main-status.is-on {
-            border-color: var(--green);
-            background: linear-gradient(180deg, var(--surface) 0%, var(--green-glow) 100%);
-        }
-
-        .main-status.is-off {
-            border-color: var(--red);
-            background: linear-gradient(180deg, var(--surface) 0%, var(--red-glow) 100%);
-        }
-
-        .status-circle {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            margin: 0 auto 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.8rem;
-        }
-
-        .is-on .status-circle {
-            background: rgba(16, 185, 129, 0.15);
-            color: var(--green);
-        }
-
-        .is-off .status-circle {
-            background: rgba(244, 63, 94, 0.15);
-            color: var(--red);
-        }
-
-        .status-header {
-            font-size: 1.7rem;
-            font-weight: 800;
-            margin-bottom: 6px;
-        }
-
-        .is-on .status-header { color: var(--green); }
-        .is-off .status-header { color: var(--red); }
-
-        .status-sub {
-            font-size: 0.95rem;
-            color: var(--text-muted);
-        }
-
-        .status-sub span {
-            color: var(--text-main);
-            font-weight: 700;
-        }
-
-        .timeline-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 20px;
-        }
-
-        .card-title {
-            font-size: 0.9rem;
-            font-weight: 700;
-            margin-bottom: 14px;
-            display: flex;
-            justify-content: space-between;
-            color: var(--text-muted);
-        }
-
-        .timeline-bar {
-            height: 24px;
-            background: var(--green);
-            border-radius: 8px;
-            position: relative;
-            overflow: hidden;
-            margin-bottom: 8px;
-        }
-
-        .timeline-off {
+        #map {
             position: absolute;
             top: 0;
             bottom: 0;
-            background: var(--red);
+            left: 0;
+            right: 0;
+            height: 100vh;
+            width: 100vw;
+            z-index: 1;
+            background: #0f172a;
         }
-
-        .timeline-ticks {
+        /* Анимированные кастомные маркеры */
+        .character-marker {
             display: flex;
-            justify-content: space-between;
-            font-size: 0.7rem;
-            color: var(--text-muted);
-        }
-
-        .outage-list-title {
-            font-size: 0.85rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            margin-top: 18px;
-            margin-bottom: 10px;
-        }
-
-        .intervals-stack {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .interval-row {
-            background: var(--surface-card);
-            border: 1px solid var(--border);
-            border-left: 4px solid var(--red);
-            padding: 10px 14px;
-            border-radius: 12px;
-            display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: center;
+            border-radius: 9999px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        .character-marker:hover {
+            transform: scale(1.25) translateY(-6px);
+        }
+        .picking-location {
+            cursor: crosshair !important;
         }
 
-        .interval-time {
-            font-weight: 800;
-            font-size: 1.05rem;
-            color: var(--text-main);
+        /* Стильный темно-градиентный Popup Leaflet */
+        .leaflet-popup-content-wrapper {
+            background: #0f172a !important; /* bg-slate-900 */
+            color: #f8fafc !important;
+            border-radius: 1.25rem !important;
+            border: 1px solid #334155;
+            padding: 4px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
         }
-
-        .interval-tag {
-            font-size: 0.75rem;
-            background: rgba(244, 63, 94, 0.15);
-            color: var(--red);
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-weight: 700;
+        .leaflet-popup-tip {
+            background: #0f172a !important;
         }
-
-        .badge-none {
-            background: var(--green-glow);
-            border: 1px solid var(--green);
-            color: var(--green);
-            padding: 12px;
-            border-radius: 12px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            width: 100%;
-            text-align: center;
+        .leaflet-popup-close-button {
+            color: #94a3b8 !important;
+            padding: 8px !important;
         }
-
-        .no-data {
-            text-align: center;
-            padding: 24px;
-            color: var(--text-muted);
-            font-size: 0.9rem;
+        .leaflet-popup-close-button:hover {
+            color: #ffffff !important;
         }
     </style>
 </head>
-<body>
+<body class="bg-slate-950 text-slate-100 h-screen w-screen overflow-hidden relative">
 
-<div class="app">
-    <div class="header">
-        <div class="logo">
-            <div class="logo-icon"><i class="fa-solid fa-bolt"></i></div>
-            <div class="logo-text">
-                <h1>Світло Львівщина</h1>
-                <p>Мульти-вибір груп</p>
-            </div>
-        </div>
-        <div class="update-pill" id="updateTimeText">Щойно</div>
+    <!-- Кнопка админки (компактная в верхнем углу) -->
+    <div class="absolute top-4 right-4 z-[1000]">
+        <button id="adminToggleBtn" onclick="toggleAdminPanel()" class="bg-slate-900/90 hover:bg-slate-800 text-amber-400 font-bold px-4 py-2.5 rounded-2xl border border-slate-700 shadow-2xl flex items-center gap-2 text-xs md:text-sm transition-all active:scale-95 backdrop-blur-md">
+            <i class="fa-solid fa-gear text-amber-400" id="lockIcon"></i>
+            <span id="adminBtnText">Админка</span>
+        </button>
     </div>
 
-    <div class="controls">
-        <div class="section-label">
-            <span>Виберіть групи:</span>
-            <span id="selectedCount" style="color: var(--accent);">Вибрано: 1</span>
+    <!-- Модальная плавающая Админ-панель -->
+    <div id="adminPanel" class="hidden absolute top-16 right-4 z-[1000] w-80 md:w-96 bg-slate-900/95 border-2 border-amber-500/50 rounded-3xl p-5 shadow-2xl backdrop-blur-xl transition-all">
+        <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-800">
+            <span class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
+                <i class="fa-solid fa-sliders"></i> Управление координатами
+            </span>
+            <button onclick="toggleAdminPanel()" class="text-slate-400 hover:text-white p-1">
+                <i class="fa-solid fa-xmark fa-lg"></i>
+            </button>
         </div>
 
-        <div class="groups-grid" id="groupsGrid">
-            <div class="group-btn test-btn" data-group="test">⚡ Група «ТЕСТ» (Приклад)</div>
-            <div class="group-btn" data-group="1.1">1.1</div>
-            <div class="group-btn" data-group="1.2">1.2</div>
-            <div class="group-btn" data-group="2.1">2.1</div>
-            <div class="group-btn" data-group="2.2">2.2</div>
-            <div class="group-btn" data-group="3.1">3.1</div>
-            <div class="group-btn" data-group="3.2">3.2</div>
-            <div class="group-btn" data-group="4.1">4.1</div>
-            <div class="group-btn" data-group="4.2">4.2</div>
-            <div class="group-btn" data-group="5.1">5.1</div>
-            <div class="group-btn" data-group="5.2">5.2</div>
-            <div class="group-btn" data-group="6.1">6.1</div>
-            <div class="group-btn" data-group="6.2">6.2</div>
-        </div>
-
-        <div class="days-switch">
-            <button class="day-btn active" id="btnToday" onclick="switchDay('today')">Сьогодні</button>
-            <button class="day-btn" id="btnTomorrow" onclick="switchDay('tomorrow')">Завтра</button>
-        </div>
-    </div>
-
-    <div class="main-status" id="statusCard">
-        <div class="status-circle" id="statusIcon">
-            <i class="fa-solid fa-lightbulb"></i>
-        </div>
-        <div class="status-header" id="statusTitle">ПЕРЕВІРКА...</div>
-        <div class="status-sub" id="statusTimer">Розрахунок...</div>
-    </div>
-
-    <div class="timeline-card">
-        <div class="card-title">
-            <span>Шкала доби</span>
-            <span id="selectedGroupsLabel" style="color: var(--text-main);">Групи: —</span>
-        </div>
-
-        <div id="timelineContainer">
-            <div class="timeline-bar" id="timelineBar"></div>
-            <div class="timeline-ticks">
-                <span>00:00</span>
-                <span>06:00</span>
-                <span>12:00</span>
-                <span>18:00</span>
-                <span>24:00</span>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1.5">Персонаж:</label>
+                <select id="adminCharSelect" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-xs font-semibold text-slate-100 focus:outline-none focus:border-amber-500">
+                    <option value="viktor">Виктор Корнеплод 🧔</option>
+                    <option value="anastasia">Анастасия Землеройка 🧓</option>
+                </select>
             </div>
 
-            <div class="outage-list-title">Години відключень:</div>
-            <div class="intervals-stack" id="intervalsStack"></div>
-        </div>
+            <!-- Режим интерактивного выбора по клику -->
+            <div>
+                <button id="pickOnMapBtn" onclick="toggleMapPickerMode()" class="w-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 active:scale-95">
+                    <i class="fa-solid fa-hand-pointer"></i>
+                    <span id="pickOnMapText">Указать точку кликом по карте</span>
+                </button>
+            </div>
 
-        <div id="noDataBox" class="no-data" style="display: none;">
-            Графік на завтра ще не опубліковано Львівобленерго.
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1">Широта (Lat)</label>
+                    <input type="number" step="any" id="inputLat" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-xs font-mono text-slate-100 focus:outline-none focus:border-amber-500" placeholder="55.7558">
+                </div>
+                <div>
+                    <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1">Долгота (Lng)</label>
+                    <input type="number" step="any" id="inputLng" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-xs font-mono text-slate-100 focus:outline-none focus:border-amber-500" placeholder="37.6173">
+                </div>
+            </div>
+
+            <div class="pt-2 flex gap-2">
+                <button onclick="saveNewCoordinates()" class="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2.5 rounded-xl text-xs transition-all shadow-lg shadow-amber-500/20 active:scale-95">
+                    <i class="fa-solid fa-floppy-disk mr-1"></i> Сохранить
+                </button>
+                <button onclick="resetToDefaults()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium px-3.5 py-2.5 rounded-xl text-xs border border-slate-700 transition-all active:scale-95" title="Сбросить к исходным">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </button>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-    const scheduleToday = {
-        "test": [
-            "00:00-06:00",
-            "06:00-09:00",
-            "09:00-12:00",
-            "12:00-17:00",
-            "17:00-23:00",
-            "23:00-00:00"
-        ],
-        "1.1": [], "1.2": [], "2.1": [], "2.2": [],
-        "3.1": [], "3.2": [], "4.1": [], "4.2": [],
-        "5.1": [], "5.2": [], "6.1": [], "6.2": []
-    };
+    <!-- Основная карта на весь экран -->
+    <div id="map"></div>
 
-    const scheduleTomorrow = null;
+    <!-- Индикатор выбора точки на карте -->
+    <div id="pickerBanner" class="hidden absolute top-5 left-1/2 -translate-x-1/2 z-[1000] bg-amber-500 text-slate-950 font-bold px-5 py-2.5 rounded-full shadow-2xl flex items-center gap-3 text-xs md:text-sm border-2 border-white animate-bounce">
+        <i class="fa-solid fa-location-crosshairs text-base"></i>
+        <span>Кликните по карте, чтобы выбрать новые координаты!</span>
+        <button onclick="toggleMapPickerMode(false)" class="ml-2 bg-slate-900/20 hover:bg-slate-900/40 rounded-full w-5 h-5 flex items-center justify-center text-slate-950 font-extrabold">&times;</button>
+    </div>
 
-    let currentDay = 'today';
-    let selectedGroups = JSON.parse(localStorage.getItem('selectedGroups')) || ['test'];
+    <!-- Модальное окно авторизации -->
+    <div id="authModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[2000] flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl relative">
+            <div class="text-center mb-5">
+                <div class="w-14 h-14 bg-amber-500/10 text-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-3 border border-amber-500/20 shadow-inner">
+                    <i class="fa-solid fa-user-shield fa-xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white">Вход в Админ-панель</h3>
+                <p class="text-xs text-slate-400 mt-1">Введите пароль для доступа к управлению</p>
+            </div>
 
-    function saveSelectedGroups() {
-        localStorage.setItem('selectedGroups', JSON.stringify(selectedGroups));
-    }
+            <form onsubmit="handleAuthSubmit(event)" class="space-y-4">
+                <div>
+                    <input type="password" id="adminPasswordInput" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-100 focus:outline-none focus:border-amber-500 transition-colors" placeholder="Введите пароль..." required autofocus>
+                    <p id="authErrorMsg" class="text-red-400 text-xs mt-2 hidden flex items-center gap-1">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Неверный пароль!
+                    </p>
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeAuthModal()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 rounded-xl text-xs transition-all">
+                        Отмена
+                    </button>
+                    <button type="submit" class="w-1/2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2.5 rounded-xl text-xs transition-all shadow-lg shadow-amber-500/20">
+                        Войти
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-    function initGroupButtons() {
-        const grid = document.getElementById('groupsGrid');
-        const buttons = grid.querySelectorAll('.group-btn');
+    <!-- Уведомления (Toast) -->
+    <div id="toast" class="fixed bottom-6 right-6 z-[2000] transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 border border-amber-500/50 text-amber-400 px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3">
+        <i class="fa-solid fa-circle-check text-lg"></i>
+        <span id="toastMsg" class="text-xs font-semibold text-slate-100">Сообщение</span>
+    </div>
 
-        buttons.forEach(btn => {
-            const grp = btn.getAttribute('data-group');
-            if (selectedGroups.includes(grp)) {
-                btn.classList.add('active');
+    <script>
+        // Начальные координаты и данные
+        const DEFAULT_DATA = {
+            viktor: {
+                name: "Виктор Корнеплод",
+                lat: 55.7558,
+                lng: 37.6173,
+                updatedAt: "2026-10-18 12:00:00",
+                icon: "🧔",
+                bgColor: "bg-amber-600",
+                borderColor: "#f59e0b",
+                textColor: "text-amber-400"
+            },
+            anastasia: {
+                name: "Анастасия Землеройка",
+                lat: 59.9342,
+                lng: 30.3351,
+                updatedAt: "2026-10-18 12:00:00",
+                icon: "🧓",
+                bgColor: "bg-purple-600",
+                borderColor: "#c084fc",
+                textColor: "text-purple-400"
             }
+        };
 
-            btn.addEventListener('click', () => {
-                if (selectedGroups.includes(grp)) {
-                    if (selectedGroups.length > 1) {
-                        selectedGroups = selectedGroups.filter(g => g !== grp);
-                        btn.classList.remove('active');
-                    }
-                } else {
-                    selectedGroups.push(grp);
-                    btn.classList.add('active');
+        const ADMIN_PASSWORD = "корнеплод2026";
+
+        let charactersData = {};
+        let map;
+        let markers = {};
+        let isAdminLoggedIn = false;
+        let isPickingOnMap = false;
+
+        window.addEventListener('load', function() {
+            loadStoredData();
+            initMap();
+            updateAdminInputValues();
+
+            // Принудительный перерасчет размера карты
+            setTimeout(function() {
+                if (map) {
+                    map.invalidateSize();
                 }
-                saveSelectedGroups();
-                render();
+            }, 300);
+        });
+
+        window.addEventListener('resize', function() {
+            if (map) {
+                map.invalidateSize();
+            }
+        });
+
+        function loadStoredData() {
+            const stored = localStorage.getItem('character_locations_data');
+            if (stored) {
+                try {
+                    charactersData = JSON.parse(stored);
+                } catch(e) {
+                    charactersData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+                }
+            } else {
+                charactersData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+                saveToLocalStorage();
+            }
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('character_locations_data', JSON.stringify(charactersData));
+        }
+
+        function initMap() {
+            map = L.map('map', {
+                zoomControl: false,
+                attributionControl: false
+            }).setView([57.8450, 33.9762], 6);
+
+            L.control.zoom({ position: 'bottomleft' }).addTo(map);
+
+            // Основной тайловый слой карт OpenStreetMap
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19
+            }).addTo(map);
+
+            Object.keys(charactersData).forEach(key => {
+                createOrUpdateMarker(key);
             });
-        });
-    }
 
-    function switchDay(day) {
-        currentDay = day;
-        document.getElementById('btnToday').classList.toggle('active', day === 'today');
-        document.getElementById('btnTomorrow').classList.toggle('active', day === 'tomorrow');
-        render();
-    }
+            map.on('click', function(e) {
+                if (isPickingOnMap) {
+                    const lat = parseFloat(e.latlng.lat.toFixed(5));
+                    const lng = parseFloat(e.latlng.lng.toFixed(5));
 
-    function parseTime(str) {
-        const p = str.split(':');
-        return parseInt(p[0]) * 60 + parseInt(p[1]);
-    }
+                    document.getElementById('inputLat').value = lat;
+                    document.getElementById('inputLng').value = lng;
 
-    function formatTime(min) {
-        const h = Math.floor(min / 60).toString().padStart(2, '0');
-        const m = (min % 60).toString().padStart(2, '0');
-        return `${h}:${m}`;
-    }
-
-    function getCombinedIntervals(day) {
-        const sch = day === 'today' ? scheduleToday : scheduleTomorrow;
-        if (!sch) return [];
-
-        let rawIntervals = [];
-
-        selectedGroups.forEach(grp => {
-            if (sch[grp]) {
-                sch[grp].forEach(str => {
-                    const parts = str.split('-');
-                    let endMin = parseTime(parts[1]);
-                    if (parts[1] === '00:00' && parseTime(parts[0]) > 0) {
-                        endMin = 1440;
-                    }
-                    rawIntervals.push({
-                        start: parseTime(parts[0]),
-                        end: endMin,
-                        raw: str
-                    });
-                });
-            }
-        });
-
-        if (rawIntervals.length === 0) return [];
-
-        rawIntervals.sort((a, b) => a.start - b.start);
-
-        let merged = [rawIntervals[0]];
-        for (let i = 1; i < rawIntervals.length; i++) {
-            let last = merged[merged.length - 1];
-            let curr = rawIntervals[i];
-
-            if (curr.start <= last.end) {
-                last.end = Math.max(last.end, curr.end);
-            } else {
-                merged.push(curr);
-            }
+                    toggleMapPickerMode(false);
+                    showToast("Координаты выбраны на карте!");
+                }
+            });
         }
 
-        return merged.map(m => {
-            const startStr = formatTime(m.start);
-            const endStr = m.end === 1440 ? '24:00' : formatTime(m.end);
-            return {
-                start: m.start,
-                end: m.end,
-                raw: `${startStr} - ${endStr}`
-            };
-        });
-    }
+        function createOrUpdateMarker(key) {
+            const char = charactersData[key];
 
-    function renderStatus() {
-        const card = document.getElementById('statusCard');
-        const title = document.getElementById('statusTitle');
-        const timer = document.getElementById('statusTimer');
+            const customIcon = L.divIcon({
+                className: 'custom-leaflet-icon',
+                html: `
+                    <div class="character-marker ${char.bgColor} w-12 h-12 text-2xl text-white border-2 shadow-2xl flex items-center justify-center" style="border-color: ${char.borderColor}">
+                        ${char.icon}
+                    </div>
+                `,
+                iconSize: [48, 48],
+                iconAnchor: [24, 24],
+                popupAnchor: [0, -24]
+            });
 
-        if (currentDay === 'tomorrow') {
-            card.className = 'main-status';
-            title.innerText = "ОЧІКУЄТЬСЯ";
-            title.style.color = "var(--text-main)";
-            timer.innerText = "Графік на завтра поки невідомий";
-            return;
-        }
-
-        const now = new Date();
-        const curMin = now.getHours() * 60 + now.getMinutes();
-        const curSec = now.getSeconds();
-        const intervals = getCombinedIntervals('today');
-
-        let isOff = false;
-        let activeInv = null;
-        let nextInv = null;
-
-        for (let i = 0; i < intervals.length; i++) {
-            const inv = intervals[i];
-            if (curMin >= inv.start && curMin < inv.end) {
-                isOff = true;
-                activeInv = inv;
-                break;
-            }
-            if (inv.start > curMin) {
-                if (!nextInv || inv.start < nextInv.start) nextInv = inv;
-            }
-        }
-
-        if (isOff) {
-            card.className = 'main-status is-off';
-            title.innerText = "НЕМАЄ СВІТЛА";
-            const remSec = (activeInv.end - curMin - 1) * 60 + (60 - curSec);
-            const m = Math.floor(remSec / 60);
-            const s = remSec % 60;
-            const endFormatted = activeInv.end === 1440 ? '24:00' : formatTime(activeInv.end);
-            timer.innerHTML = `Увімкнуть через: <span>${m} хв ${s} с</span> (о ${endFormatted})`;
-        } else {
-            card.className = 'main-status is-on';
-            title.innerText = "СВІТЛО Є";
-            if (nextInv) {
-                const remSec = (nextInv.start - curMin - 1) * 60 + (60 - curSec);
-                const m = Math.floor(remSec / 60);
-                const s = remSec % 60;
-                timer.innerHTML = `Вимкнуть через: <span>${m} хв ${s} с</span> (о ${formatTime(nextInv.start)})`;
-            } else {
-                timer.innerHTML = "До кінця дня відключень не планується";
-            }
-        }
-    }
-
-    function renderTimeline() {
-        document.getElementById('selectedCount').innerText = `Вибрано: ${selectedGroups.length}`;
-        document.getElementById('selectedGroupsLabel').innerText = `Групи: ${selectedGroups.join(', ')}`;
-
-        const container = document.getElementById('timelineContainer');
-        const noData = document.getElementById('noDataBox');
-        const bar = document.getElementById('timelineBar');
-        const stack = document.getElementById('intervalsStack');
-
-        if (currentDay === 'tomorrow' && !scheduleTomorrow) {
-            container.style.display = 'none';
-            noData.style.display = 'block';
-            return;
-        }
-
-        container.style.display = 'block';
-        noData.style.display = 'none';
-        bar.innerHTML = '';
-        stack.innerHTML = '';
-
-        const intervals = getCombinedIntervals(currentDay);
-
-        intervals.forEach(inv => {
-            const left = (inv.start / 1440) * 100;
-            const width = ((inv.end - inv.start) / 1440) * 100;
-
-            const seg = document.createElement('div');
-            seg.className = 'timeline-off';
-            seg.style.left = `${left}%`;
-            seg.style.width = `${width}%`;
-            bar.appendChild(seg);
-
-            const row = document.createElement('div');
-            row.className = 'interval-row';
-            row.innerHTML = `
-                <div class="interval-time"><i class="fa-regular fa-clock" style="color: var(--red); margin-right: 8px;"></i>${inv.raw}</div>
-                <div class="interval-tag">Немає світла</div>
+            const popupContent = `
+                <div class="text-slate-100 font-sans p-2 min-w-[200px]">
+                    <div class="flex items-center gap-3 mb-3 border-b border-slate-800 pb-2">
+                        <span class="text-3xl">${char.icon}</span>
+                        <div>
+                            <h3 class="font-bold text-base ${char.textColor} leading-tight">${char.name}</h3>
+                            <span class="text-[10px] text-slate-400">Персонаж</span>
+                        </div>
+                    </div>
+                    <div class="bg-slate-950/80 rounded-xl p-2.5 mb-2.5 text-xs font-mono space-y-1 border border-slate-800">
+                        <div class="flex justify-between"><span class="text-slate-400">Широта:</span> <span class="text-white font-semibold">${char.lat}</span></div>
+                        <div class="flex justify-between"><span class="text-slate-400">Долгота:</span> <span class="text-white font-semibold">${char.lng}</span></div>
+                    </div>
+                    <div class="text-[11px] text-slate-400 flex items-center gap-1.5 pt-1">
+                        <i class="fa-regular fa-clock ${char.textColor}"></i>
+                        <span>Обновлено: <b class="text-slate-200">${char.updatedAt}</b></span>
+                    </div>
+                </div>
             `;
-            stack.appendChild(row);
-        });
 
-        if (intervals.length === 0) {
-            stack.innerHTML = `<div class="badge-none"><i class="fa-solid fa-circle-check"></i> Відключень немає (світло весь день)</div>`;
+            if (markers[key]) {
+                markers[key].setLatLng([char.lat, char.lng]);
+                markers[key].getPopup().setContent(popupContent);
+            } else {
+                const marker = L.marker([char.lat, char.lng], { icon: customIcon }).addTo(map);
+                marker.bindPopup(popupContent);
+                markers[key] = marker;
+            }
         }
-    }
 
-    function render() {
-        renderStatus();
-        renderTimeline();
-    }
+        function updateAdminInputValues() {
+            const selectedChar = document.getElementById('adminCharSelect').value;
+            if (charactersData[selectedChar]) {
+                document.getElementById('inputLat').value = charactersData[selectedChar].lat;
+                document.getElementById('inputLng').value = charactersData[selectedChar].lng;
+            }
+        }
 
-    initGroupButtons();
-    render();
+        document.getElementById('adminCharSelect').addEventListener('change', updateAdminInputValues);
 
-    setInterval(() => {
-        renderStatus();
-    }, 1000);
-</script>
-</body>
-</html>
+        function toggleAdminPanel() {
+            if (isAdminLoggedIn) {
+                const panel = document.getElementById('adminPanel');
+                panel.classList.toggle('hidden');
+            } else {
+                document.getElementById('authModal').classList.remove('hidden');
+                document.getElementById('adminPasswordInput').focus();
+            }
+        }
+
+        function closeAuthModal() {
+            document.getElementById('authModal').classList.add('hidden');
+            document.getElementById('authErrorMsg').classList.add('hidden');
+            document.getElementById('adminPasswordInput').value = '';
+        }
+
+        function handleAuthSubmit(e) {
+            e.preventDefault();
+            const pass = document.getElementById('adminPasswordInput').value;
+            if (pass === ADMIN_PASSWORD) {
+                isAdminLoggedIn = true;
+                closeAuthModal();
+                
+                document.getElementById('adminPanel').classList.remove('hidden');
+                document.getElementById('lockIcon').className = "fa-solid fa-lock-open text-amber-400";
+                
+                showToast("Успешный вход в Админ-панель!");
+                updateAdminInputValues();
+            } else {
+                document.getElementById('authErrorMsg').classList.remove('hidden');
+            }
+        }
+
+        function toggleMapPickerMode(forceState) {
+            if (forceState !== undefined) {
+                isPickingOnMap = forceState;
+            } else {
+                isPickingOnMap = !isPickingOnMap;
+            }
+
+            const mapElement = document.getElementById('map');
+            const banner = document.getElementById('pickerBanner');
+            const btnText = document.getElementById('pickOnMapText');
+
+            if (isPickingOnMap) {
+                mapElement.classList.add('picking-location');
+                banner.classList.remove('hidden');
+                btnText.textContent = "Отменить выбор";
+            } else {
+                mapElement.classList.remove('picking-location');
+                banner.classList.add('hidden');
+                btnText.textContent = "Указать точку кликом по карте";
+            }
+        }
+
+        function getCurrentFormattedDateTime() {
+            const now = new Date();
+            const date = now.toLocaleDateString('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+            const time = now.toLocaleTimeString('ru-RU', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            return `${date} ${time}`;
+        }
+
+        function saveNewCoordinates() {
+            const selectedChar = document.getElementById('adminCharSelect').value;
+            const lat = parseFloat(document.getElementById('inputLat').value);
+            const lng = parseFloat(document.getElementById('inputLng').value);
+
+            if (isNaN(lat) || isNaN(lng)) {
+                showToast("Введите корректные координаты!", true);
+                return;
+            }
+
+            charactersData[selectedChar].lat = lat;
+            charactersData[selectedChar].lng = lng;
+            charactersData[selectedChar].updatedAt = getCurrentFormattedDateTime();
+
+            saveToLocalStorage();
+            createOrUpdateMarker(selectedChar);
+
+            map.flyTo([lat, lng], 12, { duration: 1 });
+            setTimeout(() => {
+                markers[selectedChar].openPopup();
+            }, 1100);
+
+            showToast(`Координаты ${charactersData[selectedChar].name} сохранены!`);
+        }
+
+        function resetToDefaults() {
+            if (confirm("Сбросить координаты персонажей к начальным?")) {
+                charactersData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+                saveToLocalStorage()
