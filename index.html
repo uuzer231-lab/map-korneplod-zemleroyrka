@@ -86,6 +86,8 @@
             padding: 24px;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
             position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
         }
         .modal-title {
             font-size: 18px;
@@ -161,6 +163,36 @@
             background: #d97706;
             color: white;
             border-color: #b45309;
+        }
+        .tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 14px;
+            background: #0f172a;
+            padding: 4px;
+            border-radius: 8px;
+        }
+        .tab-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            padding: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: #334155;
+            color: #f8fafc;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
         }
         .error-msg {
             color: #ef4444;
@@ -258,30 +290,69 @@
                 Управление локациями
                 <button class="close-btn" data-close="adminPanelModal">&times;</button>
             </div>
+
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="teleport">⚡ Мгновенно</button>
+                <button class="tab-btn" data-tab="route">🚶 Маршрут (Движение)</button>
+            </div>
             
             <button class="btn-map-pick" id="togglePickMode">📍 Выбрать точку кликом по карте</button>
 
-            <form id="locationForm">
-                <div class="form-group">
-                    <label for="characterSelect">Выберите персонажа:</label>
-                    <select id="characterSelect">
-                        <option value="viktor">🧔 Виктор Корнеплод</option>
-                        <option value="anastasia">🧓 Анастасия Землеройка</option>
-                    </select>
-                </div>
+            <!-- Вкладка 1: Мгновенно -->
+            <div class="tab-content active" id="teleport-content">
+                <form id="locationForm">
+                    <div class="form-group">
+                        <label for="characterSelect">Выберите персонажа:</label>
+                        <select id="characterSelect">
+                            <option value="viktor">🧔 Виктор Корнеплод</option>
+                            <option value="anastasia">🧓 Анастасия Землеройка</option>
+                        </select>
+                    </div>
 
-                <div class="form-group">
-                    <label for="latInput">Широта (Latitude):</label>
-                    <input type="number" step="any" id="latInput" placeholder="50.4501" required>
-                </div>
+                    <div class="form-group">
+                        <label for="latInput">Широта (Latitude):</label>
+                        <input type="number" step="any" id="latInput" placeholder="49.792" required>
+                    </div>
 
-                <div class="form-group">
-                    <label for="lngInput">Долгота (Longitude):</label>
-                    <input type="number" step="any" id="lngInput" placeholder="30.5234" required>
-                </div>
+                    <div class="form-group">
+                        <label for="lngInput">Долгота (Longitude):</label>
+                        <input type="number" step="any" id="lngInput" placeholder="23.153" required>
+                    </div>
 
-                <button type="submit" class="btn-submit">Сохранить местоположение</button>
-            </form>
+                    <button type="submit" class="btn-submit">Переместить мгновенно</button>
+                </form>
+            </div>
+
+            <!-- Вкладка 2: Маршрут -->
+            <div class="tab-content" id="route-content">
+                <form id="routeForm">
+                    <div class="form-group">
+                        <label for="routeCharacterSelect">Выберите персонажа:</label>
+                        <select id="routeCharacterSelect">
+                            <option value="viktor">🧔 Виктор Корнеплод</option>
+                            <option value="anastasia">🧓 Анастасия Землеройка</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="routeLatInput">Конечная широта:</label>
+                        <input type="number" step="any" id="routeLatInput" placeholder="49.800" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="routeLngInput">Конечная долгота:</label>
+                        <input type="number" step="any" id="routeLngInput" placeholder="23.160" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="routeDurationInput">Время в пути (в секундах):</label>
+                        <input type="number" id="routeDurationInput" value="30" min="5" max="3600" required>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Запустить движение</button>
+                </form>
+            </div>
+
         </div>
     </div>
 
@@ -296,19 +367,33 @@
                 emoji: "🧔",
                 lat: 49.792,
                 lng: 23.153,
-                updatedAt: "2026-10-19 10:00:00"
+                updatedAt: Date.now(),
+                moving: false,
+                fromLat: 49.792,
+                fromLng: 23.153,
+                toLat: 49.792,
+                toLng: 23.153,
+                startTime: Date.now(),
+                duration: 1000
             },
             anastasia: {
                 name: "Анастасия Землеройка",
                 emoji: "🧓",
                 lat: 49.798,
                 lng: 23.160,
-                updatedAt: "2026-10-19 10:00:00"
+                updatedAt: Date.now(),
+                moving: false,
+                fromLat: 49.798,
+                fromLng: 23.160,
+                toLat: 49.798,
+                toLng: 23.160,
+                startTime: Date.now(),
+                duration: 1000
             }
         };
 
         function loadData() {
-            const saved = localStorage.getItem("char_locations_data_v2");
+            const saved = localStorage.getItem("char_locations_data_v3");
             if (saved) {
                 try { return JSON.parse(saved); } catch (e) { return defaultData; }
             }
@@ -316,36 +401,58 @@
         }
 
         function saveData(data) {
-            localStorage.setItem("char_locations_data_v2", JSON.stringify(data));
+            localStorage.setItem("char_locations_data_v3", JSON.stringify(data));
         }
 
         let charData = loadData();
         let isAuthenticated = false;
         let isPickMode = false;
         let isHybrid = false;
+        let activeTab = 'teleport';
+
+        // Функция формирования относительного времени
+        function getRelativeTime(timestamp) {
+            const diff = Math.floor((Date.now() - timestamp) / 1000);
+            if (diff < 30) return "только что";
+            if (diff < 60) return `${diff} сек. назад`;
+            const mins = Math.floor(diff / 60);
+            if (mins < 60) {
+                let form = 'минуту';
+                if (mins % 10 === 1 && mins !== 11) form = 'минуту назад';
+                else if ([2,3,4].includes(mins % 10) && ![12,13,14].includes(mins)) form = 'минуты назад';
+                else form = 'минут назад';
+                return `${mins} ${form}`;
+            }
+            const hours = Math.floor(mins / 60);
+            if (hours < 24) {
+                let form = 'час';
+                if ([2,3,4].includes(hours % 10) && ![12,13,14].includes(hours)) form = 'часа назад';
+                else if (hours === 1) form = 'час назад';
+                else form = 'часов назад';
+                return `${hours} ${form}`;
+            }
+            const days = Math.floor(hours / 24);
+            return `${days} дн. назад`;
+        }
 
         // Инициализация карты
         const map = L.map('map', { zoomControl: false }).setView([49.795, 23.156], 13);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        // Слои карт Google (Обычная и Гибрид со спутника + надписи)
         const streetLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
             maxZoom: 20,
             subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
             attribution: '&copy; Google Maps'
         });
 
-        // lyrs=y — Гибридный слой (спутниковые снимки + дороги и названия городов)
         const hybridLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
             maxZoom: 20,
             subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
             attribution: '&copy; Google Hybrid'
         });
 
-        // Установка карты по умолчанию
         streetLayer.addTo(map);
 
-        // Кнопка переключения слоев (Гибрид / Обычная)
         const toggleLayerBtn = document.getElementById('toggleLayerBtn');
         toggleLayerBtn.addEventListener('click', () => {
             isHybrid = !isHybrid;
@@ -389,11 +496,12 @@
 
         function updatePopup(key) {
             const item = charData[key];
+            const timeText = item.moving ? "🚶 в пути..." : getRelativeTime(item.updatedAt);
             const content = `
                 <div class="popup-card">
                     <h3>${item.emoji} ${item.name}</h3>
                     <p>Последнее обновление:</p>
-                    <p style="color: #f59e0b; font-weight: 500;">${item.updatedAt}</p>
+                    <p style="color: #f59e0b; font-weight: 500;">${timeText}</p>
                     <div class="coords">${item.lat.toFixed(5)}, ${item.lng.toFixed(5)}</div>
                 </div>
             `;
@@ -401,6 +509,41 @@
         }
 
         initMarkers();
+
+        // Главный цикл анимации движения и проверки времени
+        function gameLoop() {
+            const now = Date.now();
+            let changed = false;
+
+            for (let key in charData) {
+                let item = charData[key];
+                if (item.moving) {
+                    const elapsed = now - item.startTime;
+                    const progress = Math.min(elapsed / item.duration, 1);
+
+                    item.lat = item.fromLat + (item.toLat - item.fromLat) * progress;
+                    item.lng = item.fromLng + (item.toLng - item.fromLng) * progress;
+
+                    if (progress >= 1) {
+                        item.moving = false;
+                        item.lat = item.toLat;
+                        item.lng = item.toLng;
+                        item.updatedAt = now;
+                    }
+
+                    if (markers[key]) {
+                        markers[key].setLatLng([item.lat, item.lng]);
+                        updatePopup(key);
+                    }
+                    changed = true;
+                }
+            }
+
+            if (changed) {
+                saveData(charData);
+            }
+        }
+        setInterval(gameLoop, 300);
 
         // Управление модальными окнами
         const authModal = document.getElementById('authModal');
@@ -410,109 +553,22 @@
         const authError = document.getElementById('authError');
         const passwordInput = document.getElementById('passwordInput');
         const locationForm = document.getElementById('locationForm');
+        const routeForm = document.getElementById('routeForm');
+        
         const characterSelect = document.getElementById('characterSelect');
         const latInput = document.getElementById('latInput');
         const lngInput = document.getElementById('lngInput');
+
+        const routeCharacterSelect = document.getElementById('routeCharacterSelect');
+        const routeLatInput = document.getElementById('routeLatInput');
+        const routeLngInput = document.getElementById('routeLngInput');
+        const routeDurationInput = document.getElementById('routeDurationInput');
+
         const togglePickMode = document.getElementById('togglePickMode');
 
-        openAdminBtn.addEventListener('click', () => {
-            if (isAuthenticated) {
-                openAdminPanel();
-            } else {
-                authModal.classList.add('active');
-            }
-        });
-
-        // Надежное закрытие по крестику
-        document.querySelectorAll('.close-btn').forEach(btn => {
+        // Переключение вкладок в админке
+        document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                const modalId = btn.getAttribute('data-close');
-                document.getElementById(modalId).classList.remove('active');
-            });
-        });
-
-        // Закрытие по клику вне модального окна
-        document.querySelectorAll('.modal-overlay').forEach(modal => {
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    modal.classList.remove('active');
-                }
-            });
-        });
-
-        authForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            if (passwordInput.value === ADMIN_PASSWORD) {
-                isAuthenticated = true;
-                authError.style.display = 'none';
-                passwordInput.value = '';
-                authModal.classList.remove('active');
-                openAdminPanel();
-            } else {
-                authError.style.display = 'block';
-            }
-        });
-
-        function openAdminPanel() {
-            adminPanelModal.classList.add('active');
-            fillInputsFromSelect();
-        }
-
-        function fillInputsFromSelect() {
-            const key = characterSelect.value;
-            latInput.value = charData[key].lat;
-            lngInput.value = charData[key].lng;
-        }
-
-        characterSelect.addEventListener('change', fillInputsFromSelect);
-
-        locationForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const key = characterSelect.value;
-            const lat = parseFloat(latInput.value);
-            const lng = parseFloat(lngInput.value);
-
-            if (isNaN(lat) || isNaN(lng)) return;
-
-            const now = new Date();
-            const timeStr = now.toLocaleDateString('ru-RU') + ' ' + now.toLocaleTimeString('ru-RU');
-
-            charData[key].lat = lat;
-            charData[key].lng = lng;
-            charData[key].updatedAt = timeStr;
-
-            saveData(charData);
-
-            markers[key].setLatLng([lat, lng]);
-            updatePopup(key);
-
-            adminPanelModal.classList.remove('active');
-            map.flyTo([lat, lng], 14);
-        });
-
-        togglePickMode.addEventListener('click', () => {
-            isPickMode = !isPickMode;
-            if (isPickMode) {
-                togglePickMode.classList.add('active');
-                togglePickMode.textContent = "🎯 Кликните по карте...";
-                adminPanelModal.classList.remove('active');
-            } else {
-                togglePickMode.classList.remove('active');
-                togglePickMode.textContent = "📍 Выбрать точку кликом по карте";
-            }
-        });
-
-        map.on('click', (e) => {
-            if (isPickMode && isAuthenticated) {
-                const { lat, lng } = e.latlng;
-                latInput.value = lat.toFixed(6);
-                lngInput.value = lng.toFixed(6);
-                isPickMode = false;
-                togglePickMode.classList.remove('active');
-                togglePickMode.textContent = "📍 Выбрать точку кликом по карте";
-                adminPanelModal.classList.add('active');
-            }
-        });
-    </script>
-</body>
-</html>
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('act
