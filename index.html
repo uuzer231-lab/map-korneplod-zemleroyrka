@@ -3,45 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Карта: Виктор Корнеплод и Анастасия Землеройка</title>
+    <title>Карта: Виктор и Анастасия</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; }
+        html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, sans-serif; background: #0f172a; color: #f8fafc; }
         
-        #mapCanvas {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            z-index: 1;
-            touch-action: none;
-            background: #cbd5e1;
+        #map-viewport {
+            width: 100vw; height: 100vh; position: fixed; top: 0; left: 0;
+            background: #e2e8f0; overflow: hidden; touch-action: none;
         }
 
-        .top-controls {
-            position: fixed;
-            top: 16px; right: 16px;
-            z-index: 1000;
-            display: flex; gap: 8px;
+        #mapWorld {
+            position: absolute; width: 10000px; height: 10000px; top: 0; left: 0;
+            transform-origin: 0 0;
+            background-image: 
+                radial-gradient(#cbd5e1 2px, transparent 2px),
+                linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px);
+            background-size: 40px 40px, 200px 200px, 200px 200px;
+            background-color: #f1f5f9;
+            transition: background 0.3s;
         }
+
+        #mapWorld.satellite {
+            background-image: 
+                radial-gradient(#334155 2px, transparent 2px),
+                linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-color: #0b1329;
+        }
+
+        .char-marker {
+            position: absolute; width: 48px; height: 48px; border-radius: 50%;
+            background: #1e293b; border: 3px solid #3b82f6; display: flex;
+            align-items: center; justify-content: center; font-size: 24px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.4); transform: translate(-50%, -50%);
+            z-index: 10; cursor: pointer;
+        }
+        .char-marker.viktor { border-color: #f97316; }
+        .char-marker.anastasia { border-color: #ec4899; }
+
+        .top-controls { position: fixed; top: 16px; right: 16px; z-index: 1000; display: flex; gap: 8px; }
         .btn-ui {
             background: #1e293b; color: #f59e0b; border: 1px solid #334155;
             padding: 10px 16px; border-radius: 12px; font-weight: 600; font-size: 14px;
-            cursor: pointer; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-            display: flex; align-items: center; gap: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4); cursor: pointer;
         }
         .btn-ui.active { color: #38bdf8; border-color: #38bdf8; }
 
         .info-popup {
-            position: fixed; bottom: 24px; left: 50%;
-            transform: translateX(-50%); background: #1e293b;
-            border: 1px solid #334155; border-radius: 16px;
-            padding: 16px 20px; z-index: 1500; display: none;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5); min-width: 260px; text-align: center; color: #f8fafc;
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+            background: #1e293b; border: 1px solid #334155; border-radius: 16px;
+            padding: 16px 20px; z-index: 1500; display: none; min-width: 260px;
+            text-align: center; color: #f8fafc; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
         .info-popup.active { display: block; }
-        .info-popup h3 { font-size: 17px; margin-bottom: 6px; }
-        .info-popup p { font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
-        .info-popup .coords { font-family: monospace; color: #38bdf8; background: #0f172a; padding: 4px 8px; border-radius: 6px; display: inline-block; margin-top: 6px; }
+        .info-popup .coords { font-family: monospace; color: #38bdf8; background: #0f172a; padding: 4px 8px; border-radius: 6px; margin-top: 6px; display: inline-block; }
 
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -51,19 +68,17 @@
         .modal-overlay.active { display: flex; }
         .modal-box {
             background: #1e293b; border: 1px solid #334155; border-radius: 16px;
-            width: 100%; max-width: 400px; padding: 20px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); color: #f8fafc;
-            max-height: 90vh; overflow-y: auto;
+            width: 100%; max-width: 400px; padding: 20px; color: #f8fafc;
         }
-        .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
-        .close-btn { background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer; padding: 0 8px; }
+        .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; display: flex; justify-content: space-between; }
+        .close-btn { background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer; }
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px; }
         .form-group input, .form-group select {
-            width: 100%; padding: 10px 12px; background: #0f172a; border: 1px solid #334155;
+            width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155;
             border-radius: 8px; color: #f8fafc; font-size: 14px; outline: none;
         }
-        .btn-submit { width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+        .btn-submit { width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
         .btn-map-pick { width: 100%; padding: 10px; background: #334155; color: #e2e8f0; border: 1px solid #475569; border-radius: 8px; font-size: 13px; cursor: pointer; margin-bottom: 12px; }
         .btn-map-pick.active { background: #d97706; color: white; }
         .tabs { display: flex; gap: 6px; margin-bottom: 14px; background: #0f172a; padding: 4px; border-radius: 8px; }
@@ -71,107 +86,83 @@
         .tab-btn.active { background: #334155; color: #f8fafc; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        .error-msg { color: #ef4444; font-size: 12px; margin-top: 8px; display: none; }
     </style>
 </head>
 <body>
 
-    <canvas id="mapCanvas"></canvas>
+    <div id="map-viewport">
+        <div id="mapWorld">
+            <div class="char-marker viktor" id="markerViktor" onclick="selectCharacter('viktor')">🧔</div>
+            <div class="char-marker anastasia" id="markerAnastasia" onclick="selectCharacter('anastasia')">🧓</div>
+        </div>
+    </div>
 
     <div class="top-controls">
-        <button class="btn-ui" id="toggleLayerBtn">🛰️ Спутник</button>
-        <button class="btn-ui" id="openAdminBtn">⚙️ Админка</button>
+        <button class="btn-ui" id="toggleLayerBtn" onclick="toggleLayer()">🛰️ Спутник</button>
+        <button class="btn-ui" onclick="openAdmin()">⚙️ Админка</button>
     </div>
 
     <div class="info-popup" id="infoPopup">
-        <h3 id="popTitle"></h3>
-        <p>Последнее обновление:</p>
-        <p style="color: #f59e0b; font-weight: 600;" id="popTime"></p>
+        <h3 id="popTitle" style="margin-bottom: 6px;"></h3>
+        <p style="font-size: 12px; color: #94a3b8;">Обновлено:</p>
+        <p style="color: #f59e0b; font-weight: 600; font-size: 13px;" id="popTime"></p>
         <div class="coords" id="popCoords"></div>
     </div>
 
     <!-- Авторизация -->
     <div class="modal-overlay" id="authModal">
         <div class="modal-box">
-            <div class="modal-title">
-                Вход в Админ-панель
-                <button class="close-btn" data-close="authModal">&times;</button>
-            </div>
-            <form id="authForm">
+            <div class="modal-title">Вход в Админку <button class="close-btn" onclick="closeModal('authModal')">&times;</button></div>
+            <form onsubmit="handleAuth(event)">
                 <div class="form-group">
-                    <label for="passwordInput">Пароль доступа:</label>
+                    <label>Пароль:</label>
                     <input type="password" id="passwordInput" placeholder="Введите пароль..." required>
                 </div>
-                <div class="error-msg" id="authError">Неверный пароль!</div>
+                <div id="authError" style="color: #ef4444; font-size: 12px; display: none; margin-bottom: 8px;">Неверный пароль!</div>
                 <button type="submit" class="btn-submit">Войти</button>
             </form>
         </div>
     </div>
 
-    <!-- Админка -->
+    <!-- Управление -->
     <div class="modal-overlay" id="adminPanelModal">
         <div class="modal-box">
-            <div class="modal-title">
-                Управление локациями
-                <button class="close-btn" data-close="adminPanelModal">&times;</button>
-            </div>
+            <div class="modal-title">Управление <button class="close-btn" onclick="closeModal('adminPanelModal')">&times;</button></div>
 
             <div class="tabs">
-                <button class="tab-btn active" data-tab="teleport">⚡ Мгновенно</button>
-                <button class="tab-btn" data-tab="route">🚶 Маршрут</button>
+                <button class="tab-btn active" id="tabBtnTeleport" onclick="switchTab('teleport')">⚡ Мгновенно</button>
+                <button class="tab-btn" id="tabBtnRoute" onclick="switchTab('route')">🚶 Маршрут</button>
             </div>
-            
-            <button class="btn-map-pick" id="togglePickMode">📍 Выбрать точку кликом по карте</button>
+
+            <button class="btn-map-pick" id="togglePickBtn" onclick="togglePickMode()">📍 Выбрать точку кликом по карте</button>
 
             <div class="tab-content active" id="teleport-content">
-                <form id="locationForm">
+                <form onsubmit="handleTeleport(event)">
                     <div class="form-group">
-                        <label for="characterSelect">Персонаж:</label>
-                        <select id="characterSelect">
+                        <label>Персонаж:</label>
+                        <select id="characterSelect" onchange="fillInputs()">
                             <option value="viktor">🧔 Виктор Корнеплод</option>
                             <option value="anastasia">🧓 Анастасия Землеройка</option>
                         </select>
                     </div>
-
-                    <div class="form-group">
-                        <label for="latInput">Широта (Latitude):</label>
-                        <input type="number" step="any" id="latInput" placeholder="49.792" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="lngInput">Долгота (Longitude):</label>
-                        <input type="number" step="any" id="lngInput" placeholder="23.153" required>
-                    </div>
-
+                    <div class="form-group"><label>Широта:</label><input type="number" step="any" id="latInput" required></div>
+                    <div class="form-group"><label>Долгота:</label><input type="number" step="any" id="lngInput" required></div>
                     <button type="submit" class="btn-submit">Переместить</button>
                 </form>
             </div>
 
             <div class="tab-content" id="route-content">
-                <form id="routeForm">
+                <form onsubmit="handleRoute(event)">
                     <div class="form-group">
-                        <label for="routeCharacterSelect">Персонаж:</label>
-                        <select id="routeCharacterSelect">
+                        <label>Персонаж:</label>
+                        <select id="routeCharacterSelect" onchange="fillRouteInputs()">
                             <option value="viktor">🧔 Виктор Корнеплод</option>
                             <option value="anastasia">🧓 Анастасия Землеройка</option>
                         </select>
                     </div>
-
-                    <div class="form-group">
-                        <label for="routeLatInput">Конечная широта:</label>
-                        <input type="number" step="any" id="routeLatInput" placeholder="49.800" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="routeLngInput">Конечная долгота:</label>
-                        <input type="number" step="any" id="routeLngInput" placeholder="23.160" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="routeDurationInput">Время в пути (сек):</label>
-                        <input type="number" id="routeDurationInput" value="30" min="5" max="3600" required>
-                    </div>
-
+                    <div class="form-group"><label>Конечная широта:</label><input type="number" step="any" id="routeLatInput" required></div>
+                    <div class="form-group"><label>Конечная долгота:</label><input type="number" step="any" id="routeLngInput" required></div>
+                    <div class="form-group"><label>Время в пути (сек):</label><input type="number" id="routeDurationInput" value="30" min="5" required></div>
                     <button type="submit" class="btn-submit">Запустить движение</button>
                 </form>
             </div>
@@ -187,211 +178,62 @@
         };
 
         function loadData() {
-            const saved = localStorage.getItem("char_canvas_map_v99");
+            const saved = localStorage.getItem("char_final_map_v1");
             if (saved) { try { return JSON.parse(saved); } catch (e) {} }
             return defaultData;
         }
 
-        function saveData(data) {
-            localStorage.setItem("char_canvas_map_v99", JSON.stringify(data));
-        }
+        function saveData(data) { localStorage.setItem("char_final_map_v1", JSON.stringify(data)); }
 
         let charData = loadData();
-        let isAuthenticated = false;
-        let isPickMode = false;
-        let isSatellite = false;
-        let activeTab = 'teleport';
+        let isAuthenticated = false, isPickMode = false, isSatellite = false, activeTab = 'teleport';
 
-        const canvas = document.getElementById('mapCanvas');
-        const ctx = canvas.getContext('2d');
+        const BASE_LAT = 49.795, BASE_LNG = 23.156, SCALE_LAT = 200000, SCALE_LNG = 130000, WORLD_CENTER = 5000;
 
-        let zoom = 13;
-        let centerLat = 49.795;
-        let centerLng = 23.156;
+        let panX = window.innerWidth / 2 - WORLD_CENTER;
+        let panY = window.innerHeight / 2 - WORLD_CENTER;
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            render();
-        }
-        window.addEventListener('resize', resizeCanvas);
-
-        function lon2tile(lon, z) { return ((lon + 180) / 360) * Math.pow(2, z); }
-        function lat2tile(lat, z) { return ((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2) * Math.pow(2, z); }
-        function tile2lon(x, z) { return (x / Math.pow(2, z)) * 360 - 180; }
-        function tile2lat(y, z) {
-            const n = Math.PI - (2 * Math.PI * y) / Math.pow(2, z);
-            return (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+        function latLngToXY(lat, lng) {
+            return { x: WORLD_CENTER + (lng - BASE_LNG) * SCALE_LNG, y: WORLD_CENTER - (lat - BASE_LAT) * SCALE_LAT };
         }
 
-        function latLngToPixel(lat, lng) {
-            const tileX = lon2tile(lng, zoom);
-            const tileY = lat2tile(lat, zoom);
-            const centerTileX = lon2tile(centerLng, zoom);
-            const centerTileY = lat2tile(centerLat, zoom);
-
-            const x = canvas.width / 2 + (tileX - centerTileX) * 256;
-            const y = canvas.height / 2 + (tileY - centerTileY) * 256;
-            return { x, y };
+        function xyToLatLng(x, y) {
+            return { lat: BASE_LAT - (y - WORLD_CENTER) / SCALE_LAT, lng: BASE_LNG + (x - WORLD_CENTER) / SCALE_LNG };
         }
 
-        function pixelToLatLng(x, y) {
-            const centerTileX = lon2tile(centerLng, zoom);
-            const centerTileY = lat2tile(centerLat, zoom);
-            const tileX = centerTileX + (x - canvas.width / 2) / 256;
-            const tileY = centerTileY + (y - canvas.height / 2) / 256;
-            return { lat: tile2lat(tileY, zoom), lng: tile2lon(tileX, zoom) };
-        }
+        const mapWorld = document.getElementById('mapWorld');
 
-        const tileCache = {};
+        function updateWorldTransform() { mapWorld.style.transform = `translate(${panX}px, ${panY}px)`; }
 
-        function getTileUrl(x, y, z) {
-            if (isSatellite) {
-                return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`;
-            }
-            return `https://tile.openstreetmap.org/${z}/${x}/${y}.png`;
-        }
-
-        function render() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            const centerTileX = lon2tile(centerLng, zoom);
-            const centerTileY = lat2tile(centerLat, zoom);
-
-            const startX = Math.floor(centerTileX - canvas.width / 512) - 1;
-            const endX = Math.ceil(centerTileX + canvas.width / 512) + 1;
-            const startY = Math.floor(centerTileY - canvas.height / 512) - 1;
-            const endY = Math.ceil(centerTileY + canvas.height / 512) + 1;
-
-            const maxTile = Math.pow(2, zoom);
-
-            for (let tx = startX; tx <= endX; tx++) {
-                for (let ty = startY; ty <= endY; ty++) {
-                    if (ty < 0 || ty >= maxTile) continue;
-                    const wrappedX = ((tx % maxTile) + maxTile) % maxTile;
-
-                    const url = getTileUrl(wrappedX, ty, zoom);
-                    const screenX = canvas.width / 2 + (tx - centerTileX) * 256;
-                    const screenY = canvas.height / 2 + (ty - centerTileY) * 256;
-
-                    if (tileCache[url] && tileCache[url].complete) {
-                        ctx.drawImage(tileCache[url], screenX, screenY, 256, 256);
-                    } else if (!tileCache[url]) {
-                        const img = new Image();
-                        img.crossOrigin = "anonymous";
-                        img.src = url;
-                        img.onload = () => render();
-                        tileCache[url] = img;
-                    }
-                }
-            }
-
+        function updateMarkers() {
             for (let key in charData) {
                 const item = charData[key];
-                const pos = latLngToPixel(item.lat, item.lng);
-
-                ctx.save();
-                ctx.beginPath();
-                ctx.arc(pos.x, pos.y, 22, 0, Math.PI * 2);
-                ctx.fillStyle = "#1e293b";
-                ctx.fill();
-                ctx.lineWidth = 3;
-                ctx.strokeStyle = key === 'viktor' ? "#f97316" : "#ec4899";
-                ctx.stroke();
-
-                ctx.font = "22px sans-serif";
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                ctx.fillText(item.emoji, pos.x, pos.y);
-                ctx.restore();
+                const pos = latLngToXY(item.lat, item.lng);
+                const el = document.getElementById(key === 'viktor' ? 'markerViktor' : 'markerAnastasia');
+                el.style.left = pos.x + 'px';
+                el.style.top = pos.y + 'px';
             }
         }
 
-        let isDragging = false;
-        let startX, startY;
+        let isDragging = false, startX, startY;
+        const viewport = document.getElementById('map-viewport');
 
-        canvas.addEventListener('mousedown', (e) => {
+        viewport.addEventListener('pointerdown', (e) => {
+            if (e.target.closest('.char-marker') || e.target.closest('.modal-overlay')) return;
             isDragging = true;
-            startX = e.clientX;
-            startY = e.clientY;
+            startX = e.clientX - panX;
+            startY = e.clientY - panY;
+            document.getElementById('infoPopup').classList.remove('active');
         });
 
-        canvas.addEventListener('mousemove', (e) => {
+        window.addEventListener('pointermove', (e) => {
             if (!isDragging) return;
-            const dx = e.clientX - startX;
-            const dy = e.clientY - startY;
-            startX = e.clientX;
-            startY = e.clientY;
-
-            const centerTileX = lon2tile(centerLng, zoom) - dx / 256;
-            const centerTileY = lat2tile(centerLat, zoom) - dy / 256;
-
-            centerLng = tile2lon(centerTileX, zoom);
-            centerLat = tile2lat(centerTileY, zoom);
-            render();
+            panX = e.clientX - startX;
+            panY = e.clientY - startY;
+            updateWorldTransform();
         });
 
-        window.addEventListener('mouseup', () => isDragging = false);
-
-        canvas.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 1) {
-                isDragging = true;
-                startX = e.touches[0].clientX;
-                startY = e.touches[0].clientY;
-            }
-        });
-
-        canvas.addEventListener('touchmove', (e) => {
-            if (!isDragging || e.touches.length !== 1) return;
-            const dx = e.touches[0].clientX - startX;
-            const dy = e.touches[0].clientY - startY;
-            startX = e.touches[0].clientX;
-            startY = e.touches[0].clientY;
-
-            const centerTileX = lon2tile(centerLng, zoom) - dx / 256;
-            const centerTileY = lat2tile(centerLat, zoom) - dy / 256;
-
-            centerLng = tile2lon(centerTileX, zoom);
-            centerLat = tile2lat(centerTileY, zoom);
-            render();
-        });
-
-        canvas.addEventListener('touchend', () => isDragging = false);
-
-        canvas.addEventListener('click', (e) => {
-            const clickX = e.clientX;
-            const clickY = e.clientY;
-
-            if (isPickMode && isAuthenticated) {
-                const clickedLatLng = pixelToLatLng(clickX, clickY);
-                if (activeTab === 'teleport') {
-                    document.getElementById('latInput').value = clickedLatLng.lat.toFixed(6);
-                    document.getElementById('lngInput').value = clickedLatLng.lng.toFixed(6);
-                } else {
-                    document.getElementById('routeLatInput').value = clickedLatLng.lat.toFixed(6);
-                    document.getElementById('routeLngInput').value = clickedLatLng.lng.toFixed(6);
-                }
-                isPickMode = false;
-                document.getElementById('togglePickMode').classList.remove('active');
-                document.getElementById('togglePickMode').textContent = "📍 Выбрать точку кликом по карте";
-                document.getElementById('adminPanelModal').classList.add('active');
-                return;
-            }
-
-            let hit = false;
-            for (let key in charData) {
-                const item = charData[key];
-                const pos = latLngToPixel(item.lat, item.lng);
-                const dist = Math.hypot(clickX - pos.x, clickY - pos.y);
-
-                if (dist <= 24) {
-                    showPopup(item);
-                    hit = true;
-                    break;
-                }
-            }
-            if (!hit) hidePopup();
-        });
+        window.addEventListener('pointerup', () => isDragging = false);
 
         function getRelativeTime(timestamp) {
             const diff = Math.floor((Date.now() - timestamp) / 1000);
@@ -400,19 +242,36 @@
             const mins = Math.floor(diff / 60);
             if (mins < 60) return `${mins} мин. назад`;
             const hours = Math.floor(mins / 60);
-            if (hours < 24) return `${hours} ч. назад`;
-            const days = Math.floor(hours / 24);
-            return `${days} дн. назад`;
+            return `${hours} ч. назад`;
         }
 
-        const infoPopup = document.getElementById('infoPopup');
-        function showPopup(item) {
-            document.getElementById('popTitle').textContent = `${item.emoji} ${item.name}`;
+        function selectCharacter(key) {
+            if (isPickMode) return;
+            const item = charData[key];
+            document.getElementById('popTitle').innerHTML = `${item.emoji} ${item.name}`;
             document.getElementById('popTime').textContent = item.moving ? "🚶 в пути..." : getRelativeTime(item.updatedAt);
             document.getElementById('popCoords').textContent = `${item.lat.toFixed(5)}, ${item.lng.toFixed(5)}`;
-            infoPopup.classList.add('active');
+            document.getElementById('infoPopup').classList.add('active');
         }
-        function hidePopup() { infoPopup.classList.remove('active'); }
+
+        mapWorld.addEventListener('click', (e) => {
+            if (!isPickMode) return;
+            const rect = mapWorld.getBoundingClientRect();
+            const coords = xyToLatLng(e.clientX - rect.left, e.clientY - rect.top);
+
+            if (activeTab === 'teleport') {
+                document.getElementById('latInput').value = coords.lat.toFixed(6);
+                document.getElementById('lngInput').value = coords.lng.toFixed(6);
+            } else {
+                document.getElementById('routeLatInput').value = coords.lat.toFixed(6);
+                document.getElementById('routeLngInput').value = coords.lng.toFixed(6);
+            }
+
+            isPickMode = false;
+            document.getElementById('togglePickBtn').classList.remove('active');
+            document.getElementById('togglePickBtn').textContent = "📍 Выбрать точку кликом по карте";
+            document.getElementById('adminPanelModal').classList.add('active');
+        });
 
         setInterval(() => {
             const now = Date.now();
@@ -438,21 +297,103 @@
             }
 
             if (changed) saveData(charData);
-            render();
+            updateMarkers();
         }, 100);
 
-        const toggleLayerBtn = document.getElementById('toggleLayerBtn');
-        toggleLayerBtn.addEventListener('click', () => {
+        function toggleLayer() {
             isSatellite = !isSatellite;
+            const btn = document.getElementById('toggleLayerBtn');
             if (isSatellite) {
-                toggleLayerBtn.textContent = "🗺️ Обычная";
-                toggleLayerBtn.classList.add('active');
+                mapWorld.classList.add('satellite');
+                btn.textContent = "🗺️ Обычная";
+                btn.classList.add('active');
             } else {
-                toggleLayerBtn.textContent = "🛰️ Спутник";
-                toggleLayerBtn.classList.remove('active');
+                mapWorld.classList.remove('satellite');
+                btn.textContent = "🛰️ Спутник";
+                btn.classList.remove('active');
             }
-            render();
-        });
+        }
 
-        const authModal = document.getElementById('authModal');
-        
+        function openAdmin() {
+            if (isAuthenticated) {
+                document.getElementById('adminPanelModal').classList.add('active');
+                fillInputs(); fillRouteInputs();
+            } else {
+                document.getElementById('authModal').classList.add('active');
+            }
+        }
+
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        function handleAuth(e) {
+            e.preventDefault();
+            if (document.getElementById('passwordInput').value === ADMIN_PASSWORD) {
+                isAuthenticated = true;
+                document.getElementById('authError').style.display = 'none';
+                document.getElementById('passwordInput').value = '';
+                closeModal('authModal');
+                openAdmin();
+            } else {
+                document.getElementById('authError').style.display = 'block';
+            }
+        }
+
+        function switchTab(tab) {
+            activeTab = tab;
+            document.getElementById('tabBtnTeleport').classList.toggle('active', tab === 'teleport');
+            document.getElementById('tabBtnRoute').classList.toggle('active', tab === 'route');
+            document.getElementById('teleport-content').classList.toggle('active', tab === 'teleport');
+            document.getElementById('route-content').classList.toggle('active', tab === 'route');
+        }
+
+        function fillInputs() {
+            const key = document.getElementById('characterSelect').value;
+            document.getElementById('latInput').value = charData[key].lat.toFixed(6);
+            document.getElementById('lngInput').value = charData[key].lng.toFixed(6);
+        }
+
+        function fillRouteInputs() {
+            const key = document.getElementById('routeCharacterSelect').value;
+            document.getElementById('routeLatInput').value = charData[key].lat.toFixed(6);
+            document.getElementById('routeLngInput').value = charData[key].lng.toFixed(6);
+        }
+
+        function handleTeleport(e) {
+            e.preventDefault();
+            const key = document.getElementById('characterSelect').value;
+            charData[key].lat = parseFloat(document.getElementById('latInput').value);
+            charData[key].lng = parseFloat(document.getElementById('lngInput').value);
+            charData[key].moving = false;
+            charData[key].updatedAt = Date.now();
+            saveData(charData); closeModal('adminPanelModal'); updateMarkers();
+        }
+
+        function handleRoute(e) {
+            e.preventDefault();
+            const key = document.getElementById('routeCharacterSelect').value;
+            const item = charData[key];
+            item.fromLat = item.lat; item.fromLng = item.lng;
+            item.toLat = parseFloat(document.getElementById('routeLatInput').value);
+            item.toLng = parseFloat(document.getElementById('routeLngInput').value);
+            item.startTime = Date.now();
+            item.duration = parseInt(document.getElementById('routeDurationInput').value) * 1000;
+            item.moving = true;
+            saveData(charData); closeModal('adminPanelModal'); updateMarkers();
+        }
+
+        function togglePickMode() {
+            isPickMode = !isPickMode;
+            document.getElementById('togglePickBtn').classList.toggle('active', isPickMode);
+            document.getElementById('togglePickBtn').textContent = isPickMode ? "🎯 Кликните по карте..." : "📍 Выбрать точку кликом по карте";
+            if (isPickMode) closeModal('adminPanelModal');
+        }
+
+        // Центрирование
+        const initialPos = latLngToXY(charData.viktor.lat, charData.viktor.lng);
+        panX = window.innerWidth / 2 - initialPos.x;
+        panY = window.innerHeight / 2 - initialPos.y;
+        updateWorldTransform();
+        updateMarkers();
+    </script>
+</body>
+</html>
