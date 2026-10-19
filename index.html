@@ -4,38 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Карта: Виктор Корнеплод и Анастасия Землеройка</title>
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
         html, body {
             width: 100%;
             height: 100%;
-            margin: 0;
-            padding: 0;
             overflow: hidden;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: #0f172a;
+            color: #f8fafc;
         }
-
         #map {
-            width: 100%;
-            height: 100vh;
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
+            width: 100%;
+            height: 100%;
             z-index: 1;
+            background: #e2e8f0;
         }
-
-        /* Кнопки сверху */
         .top-controls {
-            position: absolute;
+            position: fixed;
             top: 16px;
             right: 16px;
             z-index: 1000;
             display: flex;
             gap: 8px;
         }
-
         .btn-ui {
             background: #1e293b;
             color: #f59e0b;
@@ -50,13 +50,10 @@
             align-items: center;
             gap: 6px;
         }
-
         .btn-ui.active {
             color: #38bdf8;
             border-color: #38bdf8;
         }
-
-        /* Модальные окна */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -70,13 +67,10 @@
             justify-content: center;
             align-items: center;
             padding: 16px;
-            box-sizing: border-box;
         }
-
         .modal-overlay.active {
             display: flex;
         }
-
         .modal-box {
             background: #1e293b;
             border: 1px solid #334155;
@@ -89,7 +83,6 @@
             max-height: 90vh;
             overflow-y: auto;
         }
-
         .modal-title {
             font-size: 18px;
             font-weight: 700;
@@ -98,7 +91,6 @@
             justify-content: space-between;
             align-items: center;
         }
-
         .close-btn {
             background: none;
             border: none;
@@ -107,18 +99,15 @@
             cursor: pointer;
             padding: 0 8px;
         }
-
         .form-group {
             margin-bottom: 12px;
         }
-
         .form-group label {
             display: block;
             font-size: 13px;
             color: #94a3b8;
             margin-bottom: 6px;
         }
-
         .form-group input, .form-group select {
             width: 100%;
             padding: 10px 12px;
@@ -128,9 +117,7 @@
             color: #f8fafc;
             font-size: 14px;
             outline: none;
-            box-sizing: border-box;
         }
-
         .btn-submit {
             width: 100%;
             padding: 12px;
@@ -142,7 +129,6 @@
             cursor: pointer;
             margin-top: 8px;
         }
-
         .btn-map-pick {
             width: 100%;
             padding: 10px;
@@ -154,12 +140,10 @@
             cursor: pointer;
             margin-bottom: 12px;
         }
-
         .btn-map-pick.active {
             background: #d97706;
             color: white;
         }
-
         .tabs {
             display: flex;
             gap: 6px;
@@ -168,7 +152,6 @@
             padding: 4px;
             border-radius: 8px;
         }
-
         .tab-btn {
             flex: 1;
             background: none;
@@ -180,28 +163,22 @@
             cursor: pointer;
             border-radius: 6px;
         }
-
         .tab-btn.active {
             background: #334155;
             color: #f8fafc;
         }
-
         .tab-content {
             display: none;
         }
-
         .tab-content.active {
             display: block;
         }
-
         .error-msg {
             color: #ef4444;
             font-size: 12px;
             margin-top: 8px;
             display: none;
         }
-
-        /* Стиль маркеров */
         .custom-emoji-icon {
             display: flex;
             align-items: center;
@@ -214,25 +191,21 @@
             width: 40px;
             height: 40px;
         }
-
         .custom-emoji-icon.viktor { border-color: #f97316; }
         .custom-emoji-icon.anastasia { border-color: #ec4899; }
-
         .popup-card {
             padding: 4px;
         }
-
         .popup-card h3 {
             font-size: 15px;
             margin: 0 0 6px 0;
+            color: #0f172a;
         }
-
         .popup-card p {
             font-size: 12px;
-            color: #64748b;
+            color: #475569;
             margin: 0 0 4px 0;
         }
-
         .popup-card .coords {
             font-family: monospace;
             color: #0284c7;
@@ -252,7 +225,7 @@
         <button class="btn-ui" id="openAdminBtn">⚙️ Админка</button>
     </div>
 
-    <!-- Модальное окно авторизации -->
+    <!-- Модалка авторизации -->
     <div class="modal-overlay" id="authModal">
         <div class="modal-box">
             <div class="modal-title">
@@ -270,7 +243,7 @@
         </div>
     </div>
 
-    <!-- Модальное окно управления -->
+    <!-- Управление -->
     <div class="modal-overlay" id="adminPanelModal">
         <div class="modal-box">
             <div class="modal-title">
@@ -280,16 +253,15 @@
 
             <div class="tabs">
                 <button class="tab-btn active" data-tab="teleport">⚡ Мгновенно</button>
-                <button class="tab-btn" data-tab="route">🚶 Маршрут (Движение)</button>
+                <button class="tab-btn" data-tab="route">🚶 Маршрут</button>
             </div>
             
             <button class="btn-map-pick" id="togglePickMode">📍 Выбрать точку кликом по карте</button>
 
-            <!-- Вкладка 1: Мгновенно -->
             <div class="tab-content active" id="teleport-content">
                 <form id="locationForm">
                     <div class="form-group">
-                        <label for="characterSelect">Выберите персонажа:</label>
+                        <label for="characterSelect">Персонаж:</label>
                         <select id="characterSelect">
                             <option value="viktor">🧔 Виктор Корнеплод</option>
                             <option value="anastasia">🧓 Анастасия Землеройка</option>
@@ -306,15 +278,14 @@
                         <input type="number" step="any" id="lngInput" placeholder="23.153" required>
                     </div>
 
-                    <button type="submit" class="btn-submit">Переместить мгновенно</button>
+                    <button type="submit" class="btn-submit">Переместить</button>
                 </form>
             </div>
 
-            <!-- Вкладка 2: Маршрут -->
             <div class="tab-content" id="route-content">
                 <form id="routeForm">
                     <div class="form-group">
-                        <label for="routeCharacterSelect">Выберите персонажа:</label>
+                        <label for="routeCharacterSelect">Персонаж:</label>
                         <select id="routeCharacterSelect">
                             <option value="viktor">🧔 Виктор Корнеплод</option>
                             <option value="anastasia">🧓 Анастасия Землеройка</option>
@@ -332,7 +303,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="routeDurationInput">Время в пути (в секундах):</label>
+                        <label for="routeDurationInput">Время в пути (сек):</label>
                         <input type="number" id="routeDurationInput" value="30" min="5" max="3600" required>
                     </div>
 
@@ -343,8 +314,7 @@
         </div>
     </div>
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const ADMIN_PASSWORD = "KorneplodViktor_2024000";
 
@@ -380,7 +350,7 @@
         };
 
         function loadData() {
-            const saved = localStorage.getItem("char_locations_data_v7");
+            const saved = localStorage.getItem("char_locations_data_v8");
             if (saved) {
                 try { return JSON.parse(saved); } catch (e) { return defaultData; }
             }
@@ -388,7 +358,7 @@
         }
 
         function saveData(data) {
-            localStorage.setItem("char_locations_data_v7", JSON.stringify(data));
+            localStorage.setItem("char_locations_data_v8", JSON.stringify(data));
         }
 
         let charData = loadData();
@@ -409,30 +379,32 @@
             return `${days} дн. назад`;
         }
 
-        // Инициализация карты
+        // Карта OpenStreetMap
         const map = L.map('map', { 
             zoomControl: false,
-            fadeAnimation: false
+            attributionControl: false
         }).setView([49.795, 23.156], 13);
 
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        // Публичные быстрые тайлы
-        const streetLayer = L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            maxZoom: 19,
-            subdomains: 'abcd',
-            attribution: '&copy; CartoDB'
+        const streetLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
         });
 
         const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            maxZoom: 18,
-            attribution: '&copy; Esri'
+            maxZoom: 18
         });
 
         streetLayer.addTo(map);
 
-        // Перерисовка при открытии
-        setTimeout(() => { map.invalidateSize(); }, 200);
+        // Гарантированная перерисовка размеров
+        function triggerResize() {
+            map.invalidateSize();
+        }
+        window.addEventListener('load', triggerResize);
+        window.addEventListener('resize', triggerResize);
+        setTimeout(triggerResize, 300);
+        setTimeout(triggerResize, 1000);
 
         const toggleLayerBtn = document.getElementById('toggleLayerBtn');
         toggleLayerBtn.addEventListener('click', () => {
@@ -487,7 +459,6 @@
 
         initMarkers();
 
-        // Анимация движения
         setInterval(() => {
             const now = Date.now();
             let changed = false;
@@ -519,7 +490,6 @@
             if (changed) saveData(charData);
         }, 200);
 
-        // Модалки
         const authModal = document.getElementById('authModal');
         const adminPanelModal = document.getElementById('adminPanelModal');
         const openAdminBtn = document.getElementById('openAdminBtn');
@@ -590,4 +560,15 @@
             routeLngInput.value = charData[key2].lng;
         }
 
-        characterSelect.addEventListen
+        characterSelect.addEventListener('change', () => {
+            latInput.value = charData[characterSelect.value].lat;
+            lngInput.value = charData[characterSelect.value].lng;
+        });
+
+        locationForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const key = characterSelect.value;
+            const lat = parseFloat(latInput.value);
+            const lng = parseFloat(lngInput.value);
+
+    
