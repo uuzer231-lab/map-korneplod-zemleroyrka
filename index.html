@@ -13,38 +13,36 @@
             height: 100vh;
             position: fixed;
             top: 0; left: 0;
-            background: #cbd5e1;
+            background: #e2e8f0;
             overflow: hidden;
             touch-action: none;
         }
 
-        /* Мир карты (двигается при перетаскивании) */
-        #mapWorld {
+        /* Интерактивный iframe карт */
+        #mapIframe {
+            width: 100%;
+            height: 100%;
+            border: none;
             position: absolute;
-            width: 10000px;
-            height: 10000px;
             top: 0; left: 0;
-            transform-origin: 0 0;
-            background-image: 
-                linear-gradient(to right, rgba(0,0,0,0.07) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(0,0,0,0.07) 1px, transparent 1px);
-            background-size: 60px 60px;
-            background-color: #e2e8f0;
-            transition: background-color 0.3s;
+            z-index: 1;
+            pointer-events: initial;
         }
 
-        #mapWorld.satellite {
-            background-image: 
-                linear-gradient(to right, rgba(255,255,255,0.08) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(255,255,255,0.08) 1px, transparent 1px);
-            background-color: #1e293b;
+        /* Оверлей маркеров поверх карты */
+        #markersLayer {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 10;
+            pointer-events: none;
         }
 
         /* Маркеры персонажей */
         .char-marker {
             position: absolute;
-            width: 46px;
-            height: 46px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             background: rgba(30, 41, 59, 0.95);
             border: 3px solid #3b82f6;
@@ -53,10 +51,10 @@
             justify-content: center;
             font-size: 24px;
             cursor: pointer;
-            box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.5);
             transform: translate(-50%, -50%);
-            z-index: 10;
-            transition: transform 0.1s;
+            pointer-events: auto;
+            transition: left 0.2s linear, top 0.2s linear;
         }
         .char-marker:active { transform: translate(-50%, -50%) scale(0.9); }
         .char-marker.viktor { border-color: #f97316; }
@@ -105,7 +103,7 @@
             color: #f8fafc;
         }
         .info-popup.active { display: block; }
-        .info-popup h3 { font-size: 17px; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .info-popup h3 { font-size: 17px; margin-bottom: 6px; }
         .info-popup p { font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
         .info-popup .coords { font-family: monospace; color: #38bdf8; background: #0f172a; padding: 4px 8px; border-radius: 6px; display: inline-block; margin-top: 6px; }
 
@@ -134,17 +132,8 @@
             max-height: 90vh;
             overflow-y: auto;
         }
-        .modal-title {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .close-btn {
-            background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer; padding: 0 8px;
-        }
+        .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+        .close-btn { background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer; padding: 0 8px; }
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px; }
         .form-group input, .form-group select {
@@ -152,15 +141,7 @@
             background: #0f172a; border: 1px solid #334155;
             border-radius: 8px; color: #f8fafc; font-size: 14px; outline: none;
         }
-        .btn-submit {
-            width: 100%; padding: 12px; background: #2563eb; color: white;
-            border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 8px;
-        }
-        .btn-map-pick {
-            width: 100%; padding: 10px; background: #334155; color: #e2e8f0;
-            border: 1px solid #475569; border-radius: 8px; font-size: 13px; cursor: pointer; margin-bottom: 12px;
-        }
-        .btn-map-pick.active { background: #d97706; color: white; }
+        .btn-submit { width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 8px; }
         .tabs { display: flex; gap: 6px; margin-bottom: 14px; background: #0f172a; padding: 4px; border-radius: 8px; }
         .tab-btn { flex: 1; background: none; border: none; color: #94a3b8; padding: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border-radius: 6px; }
         .tab-btn.active { background: #334155; color: #f8fafc; }
@@ -172,7 +153,10 @@
 <body>
 
     <div id="map-viewport">
-        <div id="mapWorld">
+        <!-- Фрейм карты OpenStreetMap -->
+        <iframe id="mapIframe" src="https://www.openstreetmap.org/export/embed.html?bbox=23.00,49.70,23.30,49.90&layer=mapnik"></iframe>
+        
+        <div id="markersLayer">
             <div class="char-marker viktor" id="markerViktor" onclick="selectCharacter('viktor')">🧔</div>
             <div class="char-marker anastasia" id="markerAnastasia" onclick="selectCharacter('anastasia')">🧓</div>
         </div>
@@ -220,8 +204,6 @@
                 <button class="tab-btn active" onclick="switchTab('teleport')" id="tabBtnTeleport">⚡ Мгновенно</button>
                 <button class="tab-btn" onclick="switchTab('route')" id="tabBtnRoute">🚶 Маршрут</button>
             </div>
-            
-            <button class="btn-map-pick" id="togglePickModeBtn" onclick="togglePickMode()">📍 Выбрать точку кликом по карте</button>
 
             <div class="tab-content active" id="teleport-content">
                 <form onsubmit="handleTeleport(event)">
@@ -280,90 +262,35 @@
         };
 
         function loadData() {
-            const saved = localStorage.getItem("char_native_map_v1");
+            const saved = localStorage.getItem("char_iframe_map_v1");
             if (saved) { try { return JSON.parse(saved); } catch (e) {} }
             return defaultData;
         }
 
         function saveData(data) {
-            localStorage.setItem("char_native_map_v1", JSON.stringify(data));
+            localStorage.setItem("char_iframe_map_v1", JSON.stringify(data));
         }
 
         let charData = loadData();
         let isAuthenticated = false;
-        let isPickMode = false;
-        let activeTab = 'teleport';
         let isSatellite = false;
 
-        // Координатная сетка мира (центр 5000px, 5000px соответствует 49.795, 23.156)
-        const BASE_LAT = 49.795;
-        const BASE_LNG = 23.156;
-        const SCALE_LAT = 200000; // пикселей на градус широты
-        const SCALE_LNG = 130000; // пикселей на градус долготы
-        const WORLD_CENTER = 5000;
-
-        let panX = window.innerWidth / 2 - WORLD_CENTER;
-        let panY = window.innerHeight / 2 - WORLD_CENTER;
-
-        function latLngToXY(lat, lng) {
-            const x = WORLD_CENTER + (lng - BASE_LNG) * SCALE_LNG;
-            const y = WORLD_CENTER - (lat - BASE_LAT) * SCALE_LAT;
-            return { x, y };
-        }
-
-        function xyToLatLng(x, y) {
-            const lng = BASE_LNG + (x - WORLD_CENTER) / SCALE_LNG;
-            const lat = BASE_LAT - (y - WORLD_CENTER) / SCALE_LAT;
-            return { lat, lng };
-        }
-
-        const mapWorld = document.getElementById('mapWorld');
-
-        function updateWorldTransform() {
-            mapWorld.style.transform = `translate(${panX}px, ${panY}px)`;
-        }
+        // Преобразование координат в экранные проценты %
+        const MIN_LAT = 49.70, MAX_LAT = 49.90;
+        const MIN_LNG = 23.00, MAX_LNG = 23.30;
 
         function updateMarkers() {
             for (let key in charData) {
                 const item = charData[key];
-                const pos = latLngToXY(item.lat, item.lng);
+                const leftPercent = ((item.lng - MIN_LNG) / (MAX_LNG - MIN_LNG)) * 100;
+                const topPercent = (1 - (item.lat - MIN_LAT) / (MAX_LAT - MIN_LAT)) * 100;
+
                 const el = document.getElementById(key === 'viktor' ? 'markerViktor' : 'markerAnastasia');
-                el.style.left = pos.x + 'px';
-                el.style.top = pos.y + 'px';
+                el.style.left = Math.max(5, Math.min(95, leftPercent)) + '%';
+                el.style.top = Math.max(5, Math.min(95, topPercent)) + '%';
             }
         }
 
-        // Перетаскивание карты пальцем / мышкой
-        let isDragging = false, startX, startY;
-        const viewport = document.getElementById('map-viewport');
-
-        viewport.addEventListener('pointerdown', (e) => {
-            if (e.target.closest('.char-marker') || e.target.closest('.modal-overlay')) return;
-            isDragging = true;
-            startX = e.clientX - panX;
-            startY = e.clientY - panY;
-            hidePopup();
-        });
-
-        window.addEventListener('pointermove', (e) => {
-            if (!isDragging) return;
-            panX = e.clientX - startX;
-            panY = e.clientY - startY;
-            updateWorldTransform();
-        });
-
-        window.addEventListener('pointerup', () => isDragging = false);
-
-        // Центрирование камеры на персонаже при первой загрузке
-        function centerOnFirst() {
-            const pos = latLngToXY(charData.viktor.lat, charData.viktor.lng);
-            panX = window.innerWidth / 2 - pos.x;
-            panY = window.innerHeight / 2 - pos.y;
-            updateWorldTransform();
-            updateMarkers();
-        }
-
-        // Относительное время
         function getRelativeTime(timestamp) {
             const diff = Math.floor((Date.now() - timestamp) / 1000);
             if (diff < 30) return "только что";
@@ -376,9 +303,7 @@
             return `${days} дн. назад`;
         }
 
-        // Всплывающая карточка
         function selectCharacter(key) {
-            if (isPickMode) return;
             const item = charData[key];
             document.getElementById('popTitle').innerHTML = `${item.emoji} ${item.name}`;
             document.getElementById('popTime').textContent = item.moving ? "🚶 в пути..." : getRelativeTime(item.updatedAt);
@@ -390,35 +315,7 @@
             document.getElementById('infoPopup').classList.remove('active');
         }
 
-        viewport.addEventListener('click', (e) => {
-            if (!e.target.closest('.char-marker') && !e.target.closest('.top-controls') && !isPickMode) {
-                hidePopup();
-            }
-        });
-
-        // Клик по карте для выбора точки
-        mapWorld.addEventListener('click', (e) => {
-            if (!isPickMode) return;
-            const rect = mapWorld.getBoundingClientRect();
-            const clickX = (e.clientX - rect.left);
-            const clickY = (e.clientY - rect.top);
-            const coords = xyToLatLng(clickX, clickY);
-
-            if (activeTab === 'teleport') {
-                document.getElementById('latInput').value = coords.lat.toFixed(6);
-                document.getElementById('lngInput').value = coords.lng.toFixed(6);
-            } else {
-                document.getElementById('routeLatInput').value = coords.lat.toFixed(6);
-                document.getElementById('routeLngInput').value = coords.lng.toFixed(6);
-            }
-
-            isPickMode = false;
-            document.getElementById('togglePickModeBtn').classList.remove('active');
-            document.getElementById('togglePickModeBtn').textContent = "📍 Выбрать точку кликом по карте";
-            document.getElementById('adminPanelModal').classList.add('active');
-        });
-
-        // Анимация движения персонажей
+        // Анимация движения
         setInterval(() => {
             const now = Date.now();
             let changed = false;
@@ -442,28 +339,28 @@
                 }
             }
 
-            if (changed) {
-                saveData(charData);
-            }
+            if (changed) saveData(charData);
             updateMarkers();
         }, 100);
 
-        // Переключение спутника
+        // Переключение карт
         function toggleLayer() {
             isSatellite = !isSatellite;
             const btn = document.getElementById('toggleLayerBtn');
+            const iframe = document.getElementById('mapIframe');
+
             if (isSatellite) {
-                mapWorld.classList.add('satellite');
+                iframe.src = "https://www.openstreetmap.org/export/embed.html?bbox=23.00,49.70,23.30,49.90&layer=hot";
                 btn.textContent = "🗺️ Обычная";
                 btn.classList.add('active');
             } else {
-                mapWorld.classList.remove('satellite');
+                iframe.src = "https://www.openstreetmap.org/export/embed.html?bbox=23.00,49.70,23.30,49.90&layer=mapnik";
                 btn.textContent = "🛰️ Спутник";
                 btn.classList.remove('active');
             }
         }
 
-        // Модальные окна
+        // Админка
         function openAdmin() {
             if (isAuthenticated) {
                 document.getElementById('adminPanelModal').classList.add('active');
@@ -485,4 +382,79 @@
                 isAuthenticated = true;
                 document.getElementById('authError').style.display = 'none';
                 document.getElementById('passwordInput').value = '';
-              
+                closeModal('authModal');
+                openAdmin();
+            } else {
+                document.getElementById('authError').style.display = 'block';
+            }
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            if (tab === 'teleport') {
+                document.getElementById('tabBtnTeleport').classList.add('active');
+                document.getElementById('teleport-content').classList.add('active');
+            } else {
+                document.getElementById('tabBtnRoute').classList.add('active');
+                document.getElementById('route-content').classList.add('active');
+            }
+        }
+
+        function fillInputs() {
+            const key = document.getElementById('characterSelect').value;
+            document.getElementById('latInput').value = charData[key].lat.toFixed(6);
+            document.getElementById('lngInput').value = charData[key].lng.toFixed(6);
+        }
+
+        function fillRouteInputs() {
+            const key = document.getElementById('routeCharacterSelect').value;
+            document.getElementById('routeLatInput').value = charData[key].lat.toFixed(6);
+            document.getElementById('routeLngInput').value = charData[key].lng.toFixed(6);
+        }
+
+        function handleTeleport(e) {
+            e.preventDefault();
+            const key = document.getElementById('characterSelect').value;
+            const lat = parseFloat(document.getElementById('latInput').value);
+            const lng = parseFloat(document.getElementById('lngInput').value);
+
+            if (isNaN(lat) || isNaN(lng)) return;
+
+            charData[key].lat = lat;
+            charData[key].lng = lng;
+            charData[key].moving = false;
+            charData[key].updatedAt = Date.now();
+
+            saveData(charData);
+            closeModal('adminPanelModal');
+            updateMarkers();
+        }
+
+        function handleRoute(e) {
+            e.preventDefault();
+            const key = document.getElementById('routeCharacterSelect').value;
+            const toLat = parseFloat(document.getElementById('routeLatInput').value);
+            const toLng = parseFloat(document.getElementById('routeLngInput').value);
+            const durationSec = parseInt(document.getElementById('routeDurationInput').value);
+
+            if (isNaN(toLat) || isNaN(toLng) || isNaN(durationSec)) return;
+
+            const item = charData[key];
+            item.fromLat = item.lat;
+            item.fromLng = item.lng;
+            item.toLat = toLat;
+            item.toLng = toLng;
+            item.startTime = Date.now();
+            item.duration = durationSec * 1000;
+            item.moving = true;
+
+            saveData(charData);
+            closeModal('adminPanelModal');
+            updateMarkers();
+        }
+
+        updateMarkers();
+    </script>
+</body>
+</html>
