@@ -4,63 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Карта: Виктор Корнеплод и Анастасия Землеройка</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; }
-        
-        #map-viewport {
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #cbd5e1;
+            color: #f8fafc;
+        }
+        #map {
             width: 100vw;
             height: 100vh;
             position: fixed;
-            top: 0; left: 0;
-            background: #e2e8f0;
-            overflow: hidden;
-            touch-action: none;
-        }
-
-        /* Интерактивный iframe карт */
-        #mapIframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            position: absolute;
-            top: 0; left: 0;
+            top: 0;
+            left: 0;
             z-index: 1;
-            pointer-events: initial;
+            background: #cbd5e1 !important;
         }
 
-        /* Оверлей маркеров поверх карты */
-        #markersLayer {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 10;
-            pointer-events: none;
-        }
-
-        /* Маркеры персонажей */
-        .char-marker {
-            position: absolute;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: rgba(30, 41, 59, 0.95);
-            border: 3px solid #3b82f6;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            cursor: pointer;
-            box-shadow: 0 6px 16px rgba(0,0,0,0.5);
-            transform: translate(-50%, -50%);
-            pointer-events: auto;
-            transition: left 0.2s linear, top 0.2s linear;
-        }
-        .char-marker:active { transform: translate(-50%, -50%) scale(0.9); }
-        .char-marker.viktor { border-color: #f97316; }
-        .char-marker.anastasia { border-color: #ec4899; }
-
-        /* Элементы управления */
         .top-controls {
             position: fixed;
             top: 16px;
@@ -69,6 +34,7 @@
             display: flex;
             gap: 8px;
         }
+
         .btn-ui {
             background: #1e293b;
             color: #f59e0b;
@@ -83,31 +49,12 @@
             align-items: center;
             gap: 6px;
         }
-        .btn-ui.active { color: #38bdf8; border-color: #38bdf8; }
 
-        /* Всплывающая карточка */
-        .info-popup {
-            position: fixed;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 16px;
-            padding: 16px 20px;
-            z-index: 1500;
-            display: none;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            min-width: 260px;
-            text-align: center;
-            color: #f8fafc;
+        .btn-ui.active {
+            color: #38bdf8;
+            border-color: #38bdf8;
         }
-        .info-popup.active { display: block; }
-        .info-popup h3 { font-size: 17px; margin-bottom: 6px; }
-        .info-popup p { font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
-        .info-popup .coords { font-family: monospace; color: #38bdf8; background: #0f172a; padding: 4px 8px; border-radius: 6px; display: inline-block; margin-top: 6px; }
 
-        /* Модальные окна */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -119,7 +66,9 @@
             align-items: center;
             padding: 16px;
         }
+
         .modal-overlay.active { display: flex; }
+
         .modal-box {
             background: #1e293b;
             border: 1px solid #334155;
@@ -132,8 +81,25 @@
             max-height: 90vh;
             overflow-y: auto;
         }
-        .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
-        .close-btn { background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer; padding: 0 8px; }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0 8px;
+        }
+
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px; }
         .form-group input, .form-group select {
@@ -141,37 +107,54 @@
             background: #0f172a; border: 1px solid #334155;
             border-radius: 8px; color: #f8fafc; font-size: 14px; outline: none;
         }
-        .btn-submit { width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 8px; }
-        .tabs { display: flex; gap: 6px; margin-bottom: 14px; background: #0f172a; padding: 4px; border-radius: 8px; }
-        .tab-btn { flex: 1; background: none; border: none; color: #94a3b8; padding: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border-radius: 6px; }
+
+        .btn-submit {
+            width: 100%; padding: 12px; background: #2563eb; color: white;
+            border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 8px;
+        }
+
+        .btn-map-pick {
+            width: 100%; padding: 10px; background: #334155; color: #e2e8f0;
+            border: 1px solid #475569; border-radius: 8px; font-size: 13px; cursor: pointer; margin-bottom: 12px;
+        }
+        .btn-map-pick.active { background: #d97706; color: white; }
+
+        .tabs {
+            display: flex; gap: 6px; margin-bottom: 14px; background: #0f172a; padding: 4px; border-radius: 8px;
+        }
+        .tab-btn {
+            flex: 1; background: none; border: none; color: #94a3b8; padding: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border-radius: 6px;
+        }
         .tab-btn.active { background: #334155; color: #f8fafc; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         .error-msg { color: #ef4444; font-size: 12px; margin-top: 8px; display: none; }
+
+        /* Иконки персонажей */
+        .custom-emoji-icon {
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(30, 41, 59, 0.95); border: 2px solid #3b82f6;
+            border-radius: 50%; font-size: 22px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            width: 40px; height: 40px;
+        }
+        .custom-emoji-icon.viktor { border-color: #f97316; }
+        .custom-emoji-icon.anastasia { border-color: #ec4899; }
+
+        .leaflet-popup-content-wrapper { background: #1e293b !important; color: #f8fafc !important; border-radius: 12px !important; border: 1px solid #334155; }
+        .leaflet-popup-tip { background: #1e293b !important; }
+        .popup-card { padding: 4px; }
+        .popup-card h3 { font-size: 16px; margin-bottom: 6px; }
+        .popup-card p { font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+        .popup-card .coords { font-family: monospace; color: #38bdf8; background: #0f172a; padding: 4px 6px; border-radius: 4px; display: inline-block; }
     </style>
 </head>
 <body>
 
-    <div id="map-viewport">
-        <!-- Фрейм карты OpenStreetMap -->
-        <iframe id="mapIframe" src="https://www.openstreetmap.org/export/embed.html?bbox=23.00,49.70,23.30,49.90&layer=mapnik"></iframe>
-        
-        <div id="markersLayer">
-            <div class="char-marker viktor" id="markerViktor" onclick="selectCharacter('viktor')">🧔</div>
-            <div class="char-marker anastasia" id="markerAnastasia" onclick="selectCharacter('anastasia')">🧓</div>
-        </div>
-    </div>
+    <div id="map"></div>
 
     <div class="top-controls">
-        <button class="btn-ui" id="toggleLayerBtn" onclick="toggleLayer()">🛰️ Спутник</button>
-        <button class="btn-ui" onclick="openAdmin()">⚙️ Админка</button>
-    </div>
-
-    <div class="info-popup" id="infoPopup">
-        <h3 id="popTitle"></h3>
-        <p>Последнее обновление:</p>
-        <p style="color: #f59e0b; font-weight: 600;" id="popTime"></p>
-        <div class="coords" id="popCoords"></div>
+        <button class="btn-ui" id="toggleLayerBtn">🛰️ Спутник</button>
+        <button class="btn-ui" id="openAdminBtn">⚙️ Админка</button>
     </div>
 
     <!-- Модалка авторизации -->
@@ -179,9 +162,9 @@
         <div class="modal-box">
             <div class="modal-title">
                 Вход в Админ-панель
-                <button class="close-btn" onclick="closeModal('authModal')">&times;</button>
+                <button class="close-btn" data-close="authModal">&times;</button>
             </div>
-            <form id="authForm" onsubmit="handleAuth(event)">
+            <form id="authForm">
                 <div class="form-group">
                     <label for="passwordInput">Пароль доступа:</label>
                     <input type="password" id="passwordInput" placeholder="Введите пароль..." required>
@@ -197,62 +180,73 @@
         <div class="modal-box">
             <div class="modal-title">
                 Управление локациями
-                <button class="close-btn" onclick="closeModal('adminPanelModal')">&times;</button>
+                <button class="close-btn" data-close="adminPanelModal">&times;</button>
             </div>
 
             <div class="tabs">
-                <button class="tab-btn active" onclick="switchTab('teleport')" id="tabBtnTeleport">⚡ Мгновенно</button>
-                <button class="tab-btn" onclick="switchTab('route')" id="tabBtnRoute">🚶 Маршрут</button>
+                <button class="tab-btn active" data-tab="teleport">⚡ Мгновенно</button>
+                <button class="tab-btn" data-tab="route">🚶 Маршрут</button>
             </div>
+            
+            <button class="btn-map-pick" id="togglePickMode">📍 Выбрать точку кликом по карте</button>
 
             <div class="tab-content active" id="teleport-content">
-                <form onsubmit="handleTeleport(event)">
+                <form id="locationForm">
                     <div class="form-group">
-                        <label>Персонаж:</label>
-                        <select id="characterSelect" onchange="fillInputs()">
+                        <label for="characterSelect">Персонаж:</label>
+                        <select id="characterSelect">
                             <option value="viktor">🧔 Виктор Корнеплод</option>
                             <option value="anastasia">🧓 Анастасия Землеройка</option>
                         </select>
                     </div>
+
                     <div class="form-group">
-                        <label>Широта (Latitude):</label>
-                        <input type="number" step="any" id="latInput" required>
+                        <label for="latInput">Широта (Latitude):</label>
+                        <input type="number" step="any" id="latInput" placeholder="49.792" required>
                     </div>
+
                     <div class="form-group">
-                        <label>Долгота (Longitude):</label>
-                        <input type="number" step="any" id="lngInput" required>
+                        <label for="lngInput">Долгота (Longitude):</label>
+                        <input type="number" step="any" id="lngInput" placeholder="23.153" required>
                     </div>
-                    <button type="submit" class="btn-submit">Переместить мгновенно</button>
+
+                    <button type="submit" class="btn-submit">Переместить</button>
                 </form>
             </div>
 
             <div class="tab-content" id="route-content">
-                <form onsubmit="handleRoute(event)">
+                <form id="routeForm">
                     <div class="form-group">
-                        <label>Персонаж:</label>
-                        <select id="routeCharacterSelect" onchange="fillRouteInputs()">
+                        <label for="routeCharacterSelect">Персонаж:</label>
+                        <select id="routeCharacterSelect">
                             <option value="viktor">🧔 Виктор Корнеплод</option>
                             <option value="anastasia">🧓 Анастасия Землеройка</option>
                         </select>
                     </div>
+
                     <div class="form-group">
-                        <label>Конечная широта:</label>
-                        <input type="number" step="any" id="routeLatInput" required>
+                        <label for="routeLatInput">Конечная широта:</label>
+                        <input type="number" step="any" id="routeLatInput" placeholder="49.800" required>
                     </div>
+
                     <div class="form-group">
-                        <label>Конечная долгота:</label>
-                        <input type="number" step="any" id="routeLngInput" required>
+                        <label for="routeLngInput">Конечная долгота:</label>
+                        <input type="number" step="any" id="routeLngInput" placeholder="23.160" required>
                     </div>
+
                     <div class="form-group">
-                        <label>Время в пути (в секундах):</label>
+                        <label for="routeDurationInput">Время в пути (сек):</label>
                         <input type="number" id="routeDurationInput" value="30" min="5" max="3600" required>
                     </div>
+
                     <button type="submit" class="btn-submit">Запустить движение</button>
                 </form>
             </div>
         </div>
     </div>
 
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const ADMIN_PASSWORD = "KorneplodViktor_2024000";
 
@@ -262,34 +256,20 @@
         };
 
         function loadData() {
-            const saved = localStorage.getItem("char_iframe_map_v1");
+            const saved = localStorage.getItem("char_locations_data_v11");
             if (saved) { try { return JSON.parse(saved); } catch (e) {} }
             return defaultData;
         }
 
         function saveData(data) {
-            localStorage.setItem("char_iframe_map_v1", JSON.stringify(data));
+            localStorage.setItem("char_locations_data_v11", JSON.stringify(data));
         }
 
         let charData = loadData();
         let isAuthenticated = false;
+        let isPickMode = false;
         let isSatellite = false;
-
-        // Преобразование координат в экранные проценты %
-        const MIN_LAT = 49.70, MAX_LAT = 49.90;
-        const MIN_LNG = 23.00, MAX_LNG = 23.30;
-
-        function updateMarkers() {
-            for (let key in charData) {
-                const item = charData[key];
-                const leftPercent = ((item.lng - MIN_LNG) / (MAX_LNG - MIN_LNG)) * 100;
-                const topPercent = (1 - (item.lat - MIN_LAT) / (MAX_LAT - MIN_LAT)) * 100;
-
-                const el = document.getElementById(key === 'viktor' ? 'markerViktor' : 'markerAnastasia');
-                el.style.left = Math.max(5, Math.min(95, leftPercent)) + '%';
-                el.style.top = Math.max(5, Math.min(95, topPercent)) + '%';
-            }
-        }
+        let activeTab = 'teleport';
 
         function getRelativeTime(timestamp) {
             const diff = Math.floor((Date.now() - timestamp) / 1000);
@@ -303,19 +283,82 @@
             return `${days} дн. назад`;
         }
 
-        function selectCharacter(key) {
+        // Инициализация карты Leaflet
+        const map = L.map('map', { zoomControl: false }).setView([49.795, 23.156], 13);
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+        const streetLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19,
+            subdomains: 'abcd',
+            attribution: '&copy; CartoDB'
+        });
+
+        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 19,
+            attribution: '&copy; Esri'
+        });
+
+        streetLayer.addTo(map);
+
+        setTimeout(() => { map.invalidateSize(); }, 200);
+        setTimeout(() => { map.invalidateSize(); }, 700);
+        window.addEventListener('resize', () => { map.invalidateSize(); });
+
+        const toggleLayerBtn = document.getElementById('toggleLayerBtn');
+        toggleLayerBtn.addEventListener('click', () => {
+            isSatellite = !isSatellite;
+            if (isSatellite) {
+                map.removeLayer(streetLayer);
+                satelliteLayer.addTo(map);
+                toggleLayerBtn.textContent = "🗺️ Обычная";
+                toggleLayerBtn.classList.add('active');
+            } else {
+                map.removeLayer(satelliteLayer);
+                streetLayer.addTo(map);
+                toggleLayerBtn.textContent = "🛰️ Спутник";
+                toggleLayerBtn.classList.remove('active');
+            }
+        });
+
+        function createEmojiIcon(emoji, className) {
+            return L.divIcon({
+                className: `custom-emoji-icon ${className}`,
+                html: `<span>${emoji}</span>`,
+                iconSize: [40, 40],
+                iconAnchor: [20, 20],
+                popupAnchor: [0, -20]
+            });
+        }
+
+        const markers = {};
+
+        function initMarkers() {
+            const viktorIcon = createEmojiIcon(charData.viktor.emoji, 'viktor');
+            markers.viktor = L.marker([charData.viktor.lat, charData.viktor.lng], { icon: viktorIcon }).addTo(map);
+            updatePopup('viktor');
+
+            const anastasiaIcon = createEmojiIcon(charData.anastasia.emoji, 'anastasia');
+            markers.anastasia = L.marker([charData.anastasia.lat, charData.anastasia.lng], { icon: anastasiaIcon }).addTo(map);
+            updatePopup('anastasia');
+        }
+
+        function updatePopup(key) {
             const item = charData[key];
-            document.getElementById('popTitle').innerHTML = `${item.emoji} ${item.name}`;
-            document.getElementById('popTime').textContent = item.moving ? "🚶 в пути..." : getRelativeTime(item.updatedAt);
-            document.getElementById('popCoords').textContent = `${item.lat.toFixed(5)}, ${item.lng.toFixed(5)}`;
-            document.getElementById('infoPopup').classList.add('active');
+            const timeText = item.moving ? "🚶 в пути..." : getRelativeTime(item.updatedAt);
+            const content = `
+                <div class="popup-card">
+                    <h3>${item.emoji} ${item.name}</h3>
+                    <p>Последнее обновление:</p>
+                    <p style="color: #f59e0b; font-weight: 500;">${timeText}</p>
+                    <div class="coords">${item.lat.toFixed(5)}, ${item.lng.toFixed(5)}</div>
+                </div>
+            `;
+            markers[key].bindPopup(content);
         }
 
-        function hidePopup() {
-            document.getElementById('infoPopup').classList.remove('active');
-        }
+        initMarkers();
 
-        // Анимация движения
+        // Цикл анимации движения
         setInterval(() => {
             const now = Date.now();
             let changed = false;
@@ -335,89 +378,99 @@
                         item.lng = item.toLng;
                         item.updatedAt = now;
                     }
+
+                    if (markers[key]) {
+                        markers[key].setLatLng([item.lat, item.lng]);
+                        updatePopup(key);
+                    }
                     changed = true;
                 }
             }
 
             if (changed) saveData(charData);
-            updateMarkers();
         }, 100);
 
-        // Переключение карт
-        function toggleLayer() {
-            isSatellite = !isSatellite;
-            const btn = document.getElementById('toggleLayerBtn');
-            const iframe = document.getElementById('mapIframe');
+        // Управление окнами
+        const authModal = document.getElementById('authModal');
+        const adminPanelModal = document.getElementById('adminPanelModal');
+        const openAdminBtn = document.getElementById('openAdminBtn');
+        const authForm = document.getElementById('authForm');
+        const authError = document.getElementById('authError');
+        const passwordInput = document.getElementById('passwordInput');
+        const locationForm = document.getElementById('locationForm');
+        const routeForm = document.getElementById('routeForm');
+        
+        const characterSelect = document.getElementById('characterSelect');
+        const latInput = document.getElementById('latInput');
+        const lngInput = document.getElementById('lngInput');
 
-            if (isSatellite) {
-                iframe.src = "https://www.openstreetmap.org/export/embed.html?bbox=23.00,49.70,23.30,49.90&layer=hot";
-                btn.textContent = "🗺️ Обычная";
+        const routeCharacterSelect = document.getElementById('routeCharacterSelect');
+        const routeLatInput = document.getElementById('routeLatInput');
+        const routeLngInput = document.getElementById('routeLngInput');
+        const routeDurationInput = document.getElementById('routeDurationInput');
+
+        const togglePickMode = document.getElementById('togglePickMode');
+
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                 btn.classList.add('active');
-            } else {
-                iframe.src = "https://www.openstreetmap.org/export/embed.html?bbox=23.00,49.70,23.30,49.90&layer=mapnik";
-                btn.textContent = "🛰️ Спутник";
-                btn.classList.remove('active');
-            }
-        }
+                activeTab = btn.getAttribute('data-tab');
+                document.getElementById(`${activeTab}-content`).classList.add('active');
+            });
+        });
 
-        // Админка
-        function openAdmin() {
-            if (isAuthenticated) {
-                document.getElementById('adminPanelModal').classList.add('active');
-                fillInputs();
-                fillRouteInputs();
-            } else {
-                document.getElementById('authModal').classList.add('active');
-            }
-        }
+        openAdminBtn.addEventListener('click', () => {
+            if (isAuthenticated) openAdminPanel();
+            else authModal.classList.add('active');
+        });
 
-        function closeModal(id) {
-            document.getElementById(id).classList.remove('active');
-        }
+        document.querySelectorAll('.close-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const modalId = btn.getAttribute('data-close');
+                document.getElementById(modalId).classList.remove('active');
+            });
+        });
 
-        function handleAuth(e) {
+        authForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const pass = document.getElementById('passwordInput').value;
-            if (pass === ADMIN_PASSWORD) {
+            if (passwordInput.value === ADMIN_PASSWORD) {
                 isAuthenticated = true;
-                document.getElementById('authError').style.display = 'none';
-                document.getElementById('passwordInput').value = '';
-                closeModal('authModal');
-                openAdmin();
+                authError.style.display = 'none';
+                passwordInput.value = '';
+                authModal.classList.remove('active');
+                openAdminPanel();
             } else {
-                document.getElementById('authError').style.display = 'block';
+                authError.style.display = 'block';
             }
-        }
+        });
 
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            if (tab === 'teleport') {
-                document.getElementById('tabBtnTeleport').classList.add('active');
-                document.getElementById('teleport-content').classList.add('active');
-            } else {
-                document.getElementById('tabBtnRoute').classList.add('active');
-                document.getElementById('route-content').classList.add('active');
-            }
+        function openAdminPanel() {
+            adminPanelModal.classList.add('active');
+            fillInputs();
         }
 
         function fillInputs() {
-            const key = document.getElementById('characterSelect').value;
-            document.getElementById('latInput').value = charData[key].lat.toFixed(6);
-            document.getElementById('lngInput').value = charData[key].lng.toFixed(6);
+            const key1 = characterSelect.value;
+            latInput.value = charData[key1].lat;
+            lngInput.value = charData[key1].lng;
+
+            const key2 = routeCharacterSelect.value;
+            routeLatInput.value = charData[key2].lat;
+            routeLngInput.value = charData[key2].lng;
         }
 
-        function fillRouteInputs() {
-            const key = document.getElementById('routeCharacterSelect').value;
-            document.getElementById('routeLatInput').value = charData[key].lat.toFixed(6);
-            document.getElementById('routeLngInput').value = charData[key].lng.toFixed(6);
-        }
+        characterSelect.addEventListener('change', () => {
+            latInput.value = charData[characterSelect.value].lat;
+            lngInput.value = charData[characterSelect.value].lng;
+        });
 
-        function handleTeleport(e) {
+        locationForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const key = document.getElementById('characterSelect').value;
-            const lat = parseFloat(document.getElementById('latInput').value);
-            const lng = parseFloat(document.getElementById('lngInput').value);
+            const key = characterSelect.value;
+            const lat = parseFloat(latInput.value);
+            const lng = parseFloat(lngInput.value);
 
             if (isNaN(lat) || isNaN(lng)) return;
 
@@ -427,16 +480,19 @@
             charData[key].updatedAt = Date.now();
 
             saveData(charData);
-            closeModal('adminPanelModal');
-            updateMarkers();
-        }
+            markers[key].setLatLng([lat, lng]);
+            updatePopup(key);
 
-        function handleRoute(e) {
+            adminPanelModal.classList.remove('active');
+            map.flyTo([lat, lng], 14);
+        });
+
+        routeForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const key = document.getElementById('routeCharacterSelect').value;
-            const toLat = parseFloat(document.getElementById('routeLatInput').value);
-            const toLng = parseFloat(document.getElementById('routeLngInput').value);
-            const durationSec = parseInt(document.getElementById('routeDurationInput').value);
+            const key = routeCharacterSelect.value;
+            const toLat = parseFloat(routeLatInput.value);
+            const toLng = parseFloat(routeLngInput.value);
+            const durationSec = parseInt(routeDurationInput.value);
 
             if (isNaN(toLat) || isNaN(toLng) || isNaN(durationSec)) return;
 
@@ -445,16 +501,4 @@
             item.fromLng = item.lng;
             item.toLat = toLat;
             item.toLng = toLng;
-            item.startTime = Date.now();
-            item.duration = durationSec * 1000;
-            item.moving = true;
-
-            saveData(charData);
-            closeModal('adminPanelModal');
-            updateMarkers();
-        }
-
-        updateMarkers();
-    </script>
-</body>
-</html>
+            item.startTime = Date.now(
