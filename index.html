@@ -4,37 +4,67 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Карта: Виктор Корнеплод и Анастасия Землеройка</title>
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: #cbd5e1;
-            color: #f8fafc;
-        }
-        #map {
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; }
+        
+        #map-viewport {
             width: 100vw;
             height: 100vh;
             position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 1;
-            background: #cbd5e1 !important;
+            top: 0; left: 0;
+            background: #cbd5e1;
+            overflow: hidden;
+            touch-action: none;
         }
+
+        #mapWorld {
+            position: absolute;
+            width: 10000px;
+            height: 10000px;
+            top: 0; left: 0;
+            transform-origin: 0 0;
+            background-image: 
+                linear-gradient(to right, rgba(0,0,0,0.08) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0,0,0,0.08) 1px, transparent 1px);
+            background-size: 60px 60px;
+            background-color: #e2e8f0;
+            transition: background-color 0.3s;
+        }
+
+        #mapWorld.satellite {
+            background-image: 
+                linear-gradient(to right, rgba(255,255,255,0.08) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.08) 1px, transparent 1px);
+            background-color: #0f172a;
+        }
+
+        .char-marker {
+            position: absolute;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(30, 41, 59, 0.95);
+            border: 3px solid #3b82f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+        .char-marker.viktor { border-color: #f97316; }
+        .char-marker.anastasia { border-color: #ec4899; }
 
         .top-controls {
             position: fixed;
-            top: 16px;
-            right: 16px;
+            top: 16px; right: 16px;
             z-index: 1000;
             display: flex;
             gap: 8px;
         }
-
         .btn-ui {
             background: #1e293b;
             color: #f59e0b;
@@ -49,11 +79,27 @@
             align-items: center;
             gap: 6px;
         }
+        .btn-ui.active { color: #38bdf8; border-color: #38bdf8; }
 
-        .btn-ui.active {
-            color: #38bdf8;
-            border-color: #38bdf8;
+        .info-popup {
+            position: fixed;
+            bottom: 24px; left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 16px 20px;
+            z-index: 1500;
+            display: none;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            min-width: 260px;
+            text-align: center;
+            color: #f8fafc;
         }
+        .info-popup.active { display: block; }
+        .info-popup h3 { font-size: 17px; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .info-popup p { font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+        .info-popup .coords { font-family: monospace; color: #38bdf8; background: #0f172a; padding: 4px 8px; border-radius: 6px; display: inline-block; margin-top: 6px; }
 
         .modal-overlay {
             position: fixed;
@@ -66,9 +112,7 @@
             align-items: center;
             padding: 16px;
         }
-
         .modal-overlay.active { display: flex; }
-
         .modal-box {
             background: #1e293b;
             border: 1px solid #334155;
@@ -81,25 +125,11 @@
             max-height: 90vh;
             overflow-y: auto;
         }
-
         .modal-title {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            font-size: 18px; font-weight: 700; margin-bottom: 16px;
+            display: flex; justify-content: space-between; align-items: center;
         }
-
-        .close-btn {
-            background: none;
-            border: none;
-            color: #94a3b8;
-            font-size: 24px;
-            cursor: pointer;
-            padding: 0 8px;
-        }
-
+        .close-btn { background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer; padding: 0 8px; }
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px; }
         .form-group input, .form-group select {
@@ -107,54 +137,42 @@
             background: #0f172a; border: 1px solid #334155;
             border-radius: 8px; color: #f8fafc; font-size: 14px; outline: none;
         }
-
         .btn-submit {
             width: 100%; padding: 12px; background: #2563eb; color: white;
             border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 8px;
         }
-
         .btn-map-pick {
             width: 100%; padding: 10px; background: #334155; color: #e2e8f0;
             border: 1px solid #475569; border-radius: 8px; font-size: 13px; cursor: pointer; margin-bottom: 12px;
         }
         .btn-map-pick.active { background: #d97706; color: white; }
-
-        .tabs {
-            display: flex; gap: 6px; margin-bottom: 14px; background: #0f172a; padding: 4px; border-radius: 8px;
-        }
-        .tab-btn {
-            flex: 1; background: none; border: none; color: #94a3b8; padding: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border-radius: 6px;
-        }
+        .tabs { display: flex; gap: 6px; margin-bottom: 14px; background: #0f172a; padding: 4px; border-radius: 8px; }
+        .tab-btn { flex: 1; background: none; border: none; color: #94a3b8; padding: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border-radius: 6px; }
         .tab-btn.active { background: #334155; color: #f8fafc; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         .error-msg { color: #ef4444; font-size: 12px; margin-top: 8px; display: none; }
-
-        /* Иконки персонажей */
-        .custom-emoji-icon {
-            display: flex; align-items: center; justify-content: center;
-            background: rgba(30, 41, 59, 0.95); border: 2px solid #3b82f6;
-            border-radius: 50%; font-size: 22px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            width: 40px; height: 40px;
-        }
-        .custom-emoji-icon.viktor { border-color: #f97316; }
-        .custom-emoji-icon.anastasia { border-color: #ec4899; }
-
-        .leaflet-popup-content-wrapper { background: #1e293b !important; color: #f8fafc !important; border-radius: 12px !important; border: 1px solid #334155; }
-        .leaflet-popup-tip { background: #1e293b !important; }
-        .popup-card { padding: 4px; }
-        .popup-card h3 { font-size: 16px; margin-bottom: 6px; }
-        .popup-card p { font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
-        .popup-card .coords { font-family: monospace; color: #38bdf8; background: #0f172a; padding: 4px 6px; border-radius: 4px; display: inline-block; }
     </style>
 </head>
 <body>
 
-    <div id="map"></div>
+    <div id="map-viewport">
+        <div id="mapWorld">
+            <div class="char-marker viktor" id="markerViktor" onclick="selectCharacter('viktor')">🧔</div>
+            <div class="char-marker anastasia" id="markerAnastasia" onclick="selectCharacter('anastasia')">🧓</div>
+        </div>
+    </div>
 
     <div class="top-controls">
-        <button class="btn-ui" id="toggleLayerBtn">🛰️ Спутник</button>
-        <button class="btn-ui" id="openAdminBtn">⚙️ Админка</button>
+        <button class="btn-ui" id="toggleLayerBtn" onclick="toggleLayer()">🛰️ Спутник</button>
+        <button class="btn-ui" onclick="openAdmin()">⚙️ Админка</button>
+    </div>
+
+    <div class="info-popup" id="infoPopup">
+        <h3 id="popTitle"></h3>
+        <p>Последнее обновление:</p>
+        <p style="color: #f59e0b; font-weight: 600;" id="popTime"></p>
+        <div class="coords" id="popCoords"></div>
     </div>
 
     <!-- Модалка авторизации -->
@@ -162,9 +180,9 @@
         <div class="modal-box">
             <div class="modal-title">
                 Вход в Админ-панель
-                <button class="close-btn" data-close="authModal">&times;</button>
+                <button class="close-btn" onclick="closeModal('authModal')">&times;</button>
             </div>
-            <form id="authForm">
+            <form id="authForm" onsubmit="handleAuth(event)">
                 <div class="form-group">
                     <label for="passwordInput">Пароль доступа:</label>
                     <input type="password" id="passwordInput" placeholder="Введите пароль..." required>
@@ -180,73 +198,64 @@
         <div class="modal-box">
             <div class="modal-title">
                 Управление локациями
-                <button class="close-btn" data-close="adminPanelModal">&times;</button>
+                <button class="close-btn" onclick="closeModal('adminPanelModal')">&times;</button>
             </div>
 
             <div class="tabs">
-                <button class="tab-btn active" data-tab="teleport">⚡ Мгновенно</button>
-                <button class="tab-btn" data-tab="route">🚶 Маршрут</button>
+                <button class="tab-btn active" onclick="switchTab('teleport')" id="tabBtnTeleport">⚡ Мгновенно</button>
+                <button class="tab-btn" onclick="switchTab('route')" id="tabBtnRoute">🚶 Маршрут</button>
             </div>
             
-            <button class="btn-map-pick" id="togglePickMode">📍 Выбрать точку кликом по карте</button>
+            <button class="btn-map-pick" id="togglePickModeBtn" onclick="togglePickMode()">📍 Выбрать точку кликом по карте</button>
 
             <div class="tab-content active" id="teleport-content">
-                <form id="locationForm">
+                <form onsubmit="handleTeleport(event)">
                     <div class="form-group">
-                        <label for="characterSelect">Персонаж:</label>
-                        <select id="characterSelect">
+                        <label>Персонаж:</label>
+                        <select id="characterSelect" onchange="fillInputs()">
                             <option value="viktor">🧔 Виктор Корнеплод</option>
                             <option value="anastasia">🧓 Анастасия Землеройка</option>
                         </select>
                     </div>
-
                     <div class="form-group">
-                        <label for="latInput">Широта (Latitude):</label>
-                        <input type="number" step="any" id="latInput" placeholder="49.792" required>
+                        <label>Широта (Latitude):</label>
+                        <input type="number" step="any" id="latInput" required>
                     </div>
-
                     <div class="form-group">
-                        <label for="lngInput">Долгота (Longitude):</label>
-                        <input type="number" step="any" id="lngInput" placeholder="23.153" required>
+                        <label>Долгота (Longitude):</label>
+                        <input type="number" step="any" id="lngInput" required>
                     </div>
-
-                    <button type="submit" class="btn-submit">Переместить</button>
+                    <button type="submit" class="btn-submit">Переместить мгновенно</button>
                 </form>
             </div>
 
             <div class="tab-content" id="route-content">
-                <form id="routeForm">
+                <form onsubmit="handleRoute(event)">
                     <div class="form-group">
-                        <label for="routeCharacterSelect">Персонаж:</label>
-                        <select id="routeCharacterSelect">
+                        <label>Персонаж:</label>
+                        <select id="routeCharacterSelect" onchange="fillRouteInputs()">
                             <option value="viktor">🧔 Виктор Корнеплод</option>
                             <option value="anastasia">🧓 Анастасия Землеройка</option>
                         </select>
                     </div>
-
                     <div class="form-group">
-                        <label for="routeLatInput">Конечная широта:</label>
-                        <input type="number" step="any" id="routeLatInput" placeholder="49.800" required>
+                        <label>Конечная широта:</label>
+                        <input type="number" step="any" id="routeLatInput" required>
                     </div>
-
                     <div class="form-group">
-                        <label for="routeLngInput">Конечная долгота:</label>
-                        <input type="number" step="any" id="routeLngInput" placeholder="23.160" required>
+                        <label>Конечная долгота:</label>
+                        <input type="number" step="any" id="routeLngInput" required>
                     </div>
-
                     <div class="form-group">
-                        <label for="routeDurationInput">Время в пути (сек):</label>
+                        <label>Время в пути (в секундах):</label>
                         <input type="number" id="routeDurationInput" value="30" min="5" max="3600" required>
                     </div>
-
                     <button type="submit" class="btn-submit">Запустить движение</button>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const ADMIN_PASSWORD = "KorneplodViktor_2024000";
 
@@ -256,20 +265,86 @@
         };
 
         function loadData() {
-            const saved = localStorage.getItem("char_locations_data_v11");
+            const saved = localStorage.getItem("char_native_map_v2");
             if (saved) { try { return JSON.parse(saved); } catch (e) {} }
             return defaultData;
         }
 
         function saveData(data) {
-            localStorage.setItem("char_locations_data_v11", JSON.stringify(data));
+            localStorage.setItem("char_native_map_v2", JSON.stringify(data));
         }
 
         let charData = loadData();
         let isAuthenticated = false;
         let isPickMode = false;
-        let isSatellite = false;
         let activeTab = 'teleport';
+        let isSatellite = false;
+
+        const BASE_LAT = 49.795;
+        const BASE_LNG = 23.156;
+        const SCALE_LAT = 200000;
+        const SCALE_LNG = 130000;
+        const WORLD_CENTER = 5000;
+
+        let panX = window.innerWidth / 2 - WORLD_CENTER;
+        let panY = window.innerHeight / 2 - WORLD_CENTER;
+
+        function latLngToXY(lat, lng) {
+            const x = WORLD_CENTER + (lng - BASE_LNG) * SCALE_LNG;
+            const y = WORLD_CENTER - (lat - BASE_LAT) * SCALE_LAT;
+            return { x, y };
+        }
+
+        function xyToLatLng(x, y) {
+            const lng = BASE_LNG + (x - WORLD_CENTER) / SCALE_LNG;
+            const lat = BASE_LAT - (y - WORLD_CENTER) / SCALE_LAT;
+            return { lat, lng };
+        }
+
+        const mapWorld = document.getElementById('mapWorld');
+
+        function updateWorldTransform() {
+            mapWorld.style.transform = `translate(${panX}px, ${panY}px)`;
+        }
+
+        function updateMarkers() {
+            for (let key in charData) {
+                const item = charData[key];
+                const pos = latLngToXY(item.lat, item.lng);
+                const el = document.getElementById(key === 'viktor' ? 'markerViktor' : 'markerAnastasia');
+                el.style.left = pos.x + 'px';
+                el.style.top = pos.y + 'px';
+            }
+        }
+
+        // Перетаскивание карты
+        let isDragging = false, startX, startY;
+        const viewport = document.getElementById('map-viewport');
+
+        viewport.addEventListener('pointerdown', (e) => {
+            if (e.target.closest('.char-marker') || e.target.closest('.modal-overlay')) return;
+            isDragging = true;
+            startX = e.clientX - panX;
+            startY = e.clientY - panY;
+            hidePopup();
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            if (!isDragging) return;
+            panX = e.clientX - startX;
+            panY = e.clientY - startY;
+            updateWorldTransform();
+        });
+
+        window.addEventListener('pointerup', () => isDragging = false);
+
+        function centerOnFirst() {
+            const pos = latLngToXY(charData.viktor.lat, charData.viktor.lng);
+            panX = window.innerWidth / 2 - pos.x;
+            panY = window.innerHeight / 2 - pos.y;
+            updateWorldTransform();
+            updateMarkers();
+        }
 
         function getRelativeTime(timestamp) {
             const diff = Math.floor((Date.now() - timestamp) / 1000);
@@ -283,82 +358,48 @@
             return `${days} дн. назад`;
         }
 
-        // Инициализация карты Leaflet
-        const map = L.map('map', { zoomControl: false }).setView([49.795, 23.156], 13);
-        L.control.zoom({ position: 'bottomright' }).addTo(map);
+        function selectCharacter(key) {
+            if (isPickMode) return;
+            const item = charData[key];
+            document.getElementById('popTitle').innerHTML = `${item.emoji} ${item.name}`;
+            document.getElementById('popTime').textContent = item.moving ? "🚶 в пути..." : getRelativeTime(item.updatedAt);
+            document.getElementById('popCoords').textContent = `${item.lat.toFixed(5)}, ${item.lng.toFixed(5)}`;
+            document.getElementById('infoPopup').classList.add('active');
+        }
 
-        const streetLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            maxZoom: 19,
-            subdomains: 'abcd',
-            attribution: '&copy; CartoDB'
-        });
+        function hidePopup() {
+            document.getElementById('infoPopup').classList.remove('active');
+        }
 
-        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            maxZoom: 19,
-            attribution: '&copy; Esri'
-        });
-
-        streetLayer.addTo(map);
-
-        setTimeout(() => { map.invalidateSize(); }, 200);
-        setTimeout(() => { map.invalidateSize(); }, 700);
-        window.addEventListener('resize', () => { map.invalidateSize(); });
-
-        const toggleLayerBtn = document.getElementById('toggleLayerBtn');
-        toggleLayerBtn.addEventListener('click', () => {
-            isSatellite = !isSatellite;
-            if (isSatellite) {
-                map.removeLayer(streetLayer);
-                satelliteLayer.addTo(map);
-                toggleLayerBtn.textContent = "🗺️ Обычная";
-                toggleLayerBtn.classList.add('active');
-            } else {
-                map.removeLayer(satelliteLayer);
-                streetLayer.addTo(map);
-                toggleLayerBtn.textContent = "🛰️ Спутник";
-                toggleLayerBtn.classList.remove('active');
+        viewport.addEventListener('click', (e) => {
+            if (!e.target.closest('.char-marker') && !e.target.closest('.top-controls') && !isPickMode) {
+                hidePopup();
             }
         });
 
-        function createEmojiIcon(emoji, className) {
-            return L.divIcon({
-                className: `custom-emoji-icon ${className}`,
-                html: `<span>${emoji}</span>`,
-                iconSize: [40, 40],
-                iconAnchor: [20, 20],
-                popupAnchor: [0, -20]
-            });
-        }
+        // Выбор точки кликом по карте
+        mapWorld.addEventListener('click', (e) => {
+            if (!isPickMode) return;
+            const rect = mapWorld.getBoundingClientRect();
+            const clickX = (e.clientX - rect.left);
+            const clickY = (e.clientY - rect.top);
+            const coords = xyToLatLng(clickX, clickY);
 
-        const markers = {};
+            if (activeTab === 'teleport') {
+                document.getElementById('latInput').value = coords.lat.toFixed(6);
+                document.getElementById('lngInput').value = coords.lng.toFixed(6);
+            } else {
+                document.getElementById('routeLatInput').value = coords.lat.toFixed(6);
+                document.getElementById('routeLngInput').value = coords.lng.toFixed(6);
+            }
 
-        function initMarkers() {
-            const viktorIcon = createEmojiIcon(charData.viktor.emoji, 'viktor');
-            markers.viktor = L.marker([charData.viktor.lat, charData.viktor.lng], { icon: viktorIcon }).addTo(map);
-            updatePopup('viktor');
+            isPickMode = false;
+            document.getElementById('togglePickModeBtn').classList.remove('active');
+            document.getElementById('togglePickModeBtn').textContent = "📍 Выбрать точку кликом по карте";
+            document.getElementById('adminPanelModal').classList.add('active');
+        });
 
-            const anastasiaIcon = createEmojiIcon(charData.anastasia.emoji, 'anastasia');
-            markers.anastasia = L.marker([charData.anastasia.lat, charData.anastasia.lng], { icon: anastasiaIcon }).addTo(map);
-            updatePopup('anastasia');
-        }
-
-        function updatePopup(key) {
-            const item = charData[key];
-            const timeText = item.moving ? "🚶 в пути..." : getRelativeTime(item.updatedAt);
-            const content = `
-                <div class="popup-card">
-                    <h3>${item.emoji} ${item.name}</h3>
-                    <p>Последнее обновление:</p>
-                    <p style="color: #f59e0b; font-weight: 500;">${timeText}</p>
-                    <div class="coords">${item.lat.toFixed(5)}, ${item.lng.toFixed(5)}</div>
-                </div>
-            `;
-            markers[key].bindPopup(content);
-        }
-
-        initMarkers();
-
-        // Цикл анимации движения
+        // Анимация движения персонажей
         setInterval(() => {
             const now = Date.now();
             let changed = false;
@@ -378,127 +419,63 @@
                         item.lng = item.toLng;
                         item.updatedAt = now;
                     }
-
-                    if (markers[key]) {
-                        markers[key].setLatLng([item.lat, item.lng]);
-                        updatePopup(key);
-                    }
                     changed = true;
                 }
             }
 
             if (changed) saveData(charData);
+            updateMarkers();
         }, 100);
 
-        // Управление окнами
-        const authModal = document.getElementById('authModal');
-        const adminPanelModal = document.getElementById('adminPanelModal');
-        const openAdminBtn = document.getElementById('openAdminBtn');
-        const authForm = document.getElementById('authForm');
-        const authError = document.getElementById('authError');
-        const passwordInput = document.getElementById('passwordInput');
-        const locationForm = document.getElementById('locationForm');
-        const routeForm = document.getElementById('routeForm');
-        
-        const characterSelect = document.getElementById('characterSelect');
-        const latInput = document.getElementById('latInput');
-        const lngInput = document.getElementById('lngInput');
-
-        const routeCharacterSelect = document.getElementById('routeCharacterSelect');
-        const routeLatInput = document.getElementById('routeLatInput');
-        const routeLngInput = document.getElementById('routeLngInput');
-        const routeDurationInput = document.getElementById('routeDurationInput');
-
-        const togglePickMode = document.getElementById('togglePickMode');
-
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        function toggleLayer() {
+            isSatellite = !isSatellite;
+            const btn = document.getElementById('toggleLayerBtn');
+            if (isSatellite) {
+                mapWorld.classList.add('satellite');
+                btn.textContent = "🗺️ Обычная";
                 btn.classList.add('active');
-                activeTab = btn.getAttribute('data-tab');
-                document.getElementById(`${activeTab}-content`).classList.add('active');
-            });
-        });
-
-        openAdminBtn.addEventListener('click', () => {
-            if (isAuthenticated) openAdminPanel();
-            else authModal.classList.add('active');
-        });
-
-        document.querySelectorAll('.close-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const modalId = btn.getAttribute('data-close');
-                document.getElementById(modalId).classList.remove('active');
-            });
-        });
-
-        authForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            if (passwordInput.value === ADMIN_PASSWORD) {
-                isAuthenticated = true;
-                authError.style.display = 'none';
-                passwordInput.value = '';
-                authModal.classList.remove('active');
-                openAdminPanel();
             } else {
-                authError.style.display = 'block';
+                mapWorld.classList.remove('satellite');
+                btn.textContent = "🛰️ Спутник";
+                btn.classList.remove('active');
             }
-        });
-
-        function openAdminPanel() {
-            adminPanelModal.classList.add('active');
-            fillInputs();
         }
 
-        function fillInputs() {
-            const key1 = characterSelect.value;
-            latInput.value = charData[key1].lat;
-            lngInput.value = charData[key1].lng;
-
-            const key2 = routeCharacterSelect.value;
-            routeLatInput.value = charData[key2].lat;
-            routeLngInput.value = charData[key2].lng;
+        function openAdmin() {
+            if (isAuthenticated) {
+                document.getElementById('adminPanelModal').classList.add('active');
+                fillInputs();
+                fillRouteInputs();
+            } else {
+                document.getElementById('authModal').classList.add('active');
+            }
         }
 
-        characterSelect.addEventListener('change', () => {
-            latInput.value = charData[characterSelect.value].lat;
-            lngInput.value = charData[characterSelect.value].lng;
-        });
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
 
-        locationForm.addEventListener('submit', (e) => {
+        function handleAuth(e) {
             e.preventDefault();
-            const key = characterSelect.value;
-            const lat = parseFloat(latInput.value);
-            const lng = parseFloat(lngInput.value);
+            const pass = document.getElementById('passwordInput').value;
+            if (pass === ADMIN_PASSWORD) {
+                isAuthenticated = true;
+                document.getElementById('authError').style.display = 'none';
+                document.getElementById('passwordInput').value = '';
+                closeModal('authModal');
+                openAdmin();
+            } else {
+                document.getElementById('authError').style.display = 'block';
+            }
+        }
 
-            if (isNaN(lat) || isNaN(lng)) return;
-
-            charData[key].lat = lat;
-            charData[key].lng = lng;
-            charData[key].moving = false;
-            charData[key].updatedAt = Date.now();
-
-            saveData(charData);
-            markers[key].setLatLng([lat, lng]);
-            updatePopup(key);
-
-            adminPanelModal.classList.remove('active');
-            map.flyTo([lat, lng], 14);
-        });
-
-        routeForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const key = routeCharacterSelect.value;
-            const toLat = parseFloat(routeLatInput.value);
-            const toLng = parseFloat(routeLngInput.value);
-            const durationSec = parseInt(routeDurationInput.value);
-
-            if (isNaN(toLat) || isNaN(toLng) || isNaN(durationSec)) return;
-
-            const item = charData[key];
-            item.fromLat = item.lat;
-            item.fromLng = item.lng;
-            item.toLat = toLat;
-            item.toLng = toLng;
-            item.startTime = Date.now(
+        function switchTab(tab) {
+            activeTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            if (tab === 'teleport') {
+                document.getElementById('tabBtnTeleport').classList.add('active');
+                document.getElementById('teleport-content').classList.add('active');
+            } else {
+                document.getElementById('tabBtnRoute').classList.add('active');
+                document.getElementByI
