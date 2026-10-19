@@ -28,14 +28,16 @@
             left: 0;
             z-index: 1;
         }
-        /* Кнопка Админки */
-        .admin-btn-container {
+        /* Кнопки в правом верхнем углу */
+        .top-controls {
             position: absolute;
             top: 16px;
             right: 16px;
             z-index: 1000;
+            display: flex;
+            gap: 8px;
         }
-        .btn-admin {
+        .btn-ui {
             background: #1e293b;
             color: #f59e0b;
             border: 1px solid #334155;
@@ -50,9 +52,12 @@
             gap: 8px;
             transition: all 0.2s ease;
         }
-        .btn-admin:hover {
+        .btn-ui:hover {
             background: #334155;
             transform: translateY(-2px);
+        }
+        .btn-ui.satellite-active {
+            color: #38bdf8;
         }
         /* Модальные окна */
         .modal-overlay {
@@ -98,6 +103,10 @@
             font-size: 24px;
             cursor: pointer;
             line-height: 1;
+            padding: 4px 8px;
+        }
+        .close-btn:hover {
+            color: #f8fafc;
         }
         .form-group {
             margin-bottom: 14px;
@@ -219,10 +228,9 @@
 
     <div id="map"></div>
 
-    <div class="admin-btn-container">
-        <button class="btn-admin" id="openAdminBtn">
-            ⚙️ Админка
-        </button>
+    <div class="top-controls">
+        <button class="btn-ui" id="toggleLayerBtn">🛰️ Спутник</button>
+        <button class="btn-ui" id="openAdminBtn">⚙️ Админка</button>
     </div>
 
     <!-- Модальное окно авторизации -->
@@ -230,7 +238,7 @@
         <div class="modal-box">
             <div class="modal-title">
                 Вход в Админ-панель
-                <button class="close-btn" class="closeModal">&times;</button>
+                <button class="close-btn" data-close="authModal">&times;</button>
             </div>
             <form id="authForm">
                 <div class="form-group">
@@ -248,7 +256,7 @@
         <div class="modal-box">
             <div class="modal-title">
                 Управление локациями
-                <button class="close-btn" class="closeModal">&times;</button>
+                <button class="close-btn" data-close="adminPanelModal">&times;</button>
             </div>
             
             <button class="btn-map-pick" id="togglePickMode">📍 Выбрать точку кликом по карте</button>
@@ -280,10 +288,8 @@
     <!-- JS Leaflet -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Кодовый пароль
         const ADMIN_PASSWORD = "KorneplodViktor_2024000";
 
-        // Дефолтные данные
         const defaultData = {
             viktor: {
                 name: "Виктор Корнеплод",
@@ -301,15 +307,10 @@
             }
         };
 
-        // Загрузка или инициализация данных из localStorage
         function loadData() {
             const saved = localStorage.getItem("char_locations_data_v2");
             if (saved) {
-                try {
-                    return JSON.parse(saved);
-                } catch (e) {
-                    return defaultData;
-                }
+                try { return JSON.parse(saved); } catch (e) { return defaultData; }
             }
             return defaultData;
         }
@@ -321,26 +322,48 @@
         let charData = loadData();
         let isAuthenticated = false;
         let isPickMode = false;
+        let isSatellite = false;
 
-        // Инициализация карты с тайлами Google Maps
-        const map = L.map('map', {
-            zoomControl: false
-        }).setView([49.795, 23.156], 13);
-
+        // Инициализация карты
+        const map = L.map('map', { zoomControl: false }).setView([49.795, 23.156], 13);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        // Тайлы Google Maps (Стандартная карта)
-        L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+        // Слои карт Google
+        const streetLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
             maxZoom: 20,
             subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
             attribution: '&copy; Google Maps'
-        }).addTo(map);
+        });
 
-        // Перерасчет размера карты
+        const satelliteLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+            attribution: '&copy; Google Satellite'
+        });
+
+        // Установка карты по умолчанию
+        streetLayer.addTo(map);
+
+        // Кнопка переключения слоев (Спутник / Обычная)
+        const toggleLayerBtn = document.getElementById('toggleLayerBtn');
+        toggleLayerBtn.addEventListener('click', () => {
+            isSatellite = !isSatellite;
+            if (isSatellite) {
+                map.removeLayer(streetLayer);
+                satelliteLayer.addTo(map);
+                toggleLayerBtn.textContent = "🗺️ Обычная";
+                toggleLayerBtn.classList.add('satellite-active');
+            } else {
+                map.removeLayer(satelliteLayer);
+                streetLayer.addTo(map);
+                toggleLayerBtn.textContent = "🛰️ Спутник";
+                toggleLayerBtn.classList.remove('satellite-active');
+            }
+        });
+
         setTimeout(() => { map.invalidateSize(); }, 300);
         window.addEventListener('resize', () => { map.invalidateSize(); });
 
-        // Создание иконки
         function createEmojiIcon(emoji, className) {
             return L.divIcon({
                 className: `custom-emoji-icon ${className}`,
@@ -351,16 +374,13 @@
             });
         }
 
-        // Маркеры
         const markers = {};
 
         function initMarkers() {
-            // Виктор Корнеплод
             const viktorIcon = createEmojiIcon(charData.viktor.emoji, 'viktor');
             markers.viktor = L.marker([charData.viktor.lat, charData.viktor.lng], { icon: viktorIcon }).addTo(map);
             updatePopup('viktor');
 
-            // Анастасия Землеройка
             const anastasiaIcon = createEmojiIcon(charData.anastasia.emoji, 'anastasia');
             markers.anastasia = L.marker([charData.anastasia.lat, charData.anastasia.lng], { icon: anastasiaIcon }).addTo(map);
             updatePopup('anastasia');
@@ -402,14 +422,23 @@
             }
         });
 
-        document.querySelectorAll('.closeModal').forEach(btn => {
+        // Надежное закрытие по крестику
+        document.querySelectorAll('.close-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                authModal.classList.remove('active');
-                adminPanelModal.classList.remove('active');
+                const modalId = btn.getAttribute('data-close');
+                document.getElementById(modalId).classList.remove('active');
             });
         });
 
-        // Авторизация
+        // Закрытие по клику вне модального окна
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+
         authForm.addEventListener('submit', (e) => {
             e.preventDefault();
             if (passwordInput.value === ADMIN_PASSWORD) {
@@ -436,7 +465,6 @@
 
         characterSelect.addEventListener('change', fillInputsFromSelect);
 
-        // Обновление местоположения
         locationForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const key = characterSelect.value;
@@ -461,7 +489,6 @@
             map.flyTo([lat, lng], 14);
         });
 
-        // Выбор кликом по карте
         togglePickMode.addEventListener('click', () => {
             isPickMode = !isPickMode;
             if (isPickMode) {
