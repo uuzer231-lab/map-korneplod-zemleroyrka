@@ -5,218 +5,73 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Карта: Виктор Корнеплод и Анастасия Землеройка</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-        }
-        html, body {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #0f172a;
-            color: #f8fafc;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; }
+        
         #mapCanvas {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
             z-index: 1;
             touch-action: none;
             background: #cbd5e1;
         }
+
         .top-controls {
             position: fixed;
-            top: 16px;
-            right: 16px;
+            top: 16px; right: 16px;
             z-index: 1000;
-            display: flex;
-            gap: 8px;
+            display: flex; gap: 8px;
         }
         .btn-ui {
-            background: #1e293b;
-            color: #f59e0b;
-            border: 1px solid #334155;
-            padding: 10px 16px;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 14px;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-            display: flex;
-            align-items: center;
-            gap: 6px;
+            background: #1e293b; color: #f59e0b; border: 1px solid #334155;
+            padding: 10px 16px; border-radius: 12px; font-weight: 600; font-size: 14px;
+            cursor: pointer; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            display: flex; align-items: center; gap: 6px;
         }
-        .btn-ui.active {
-            color: #38bdf8;
-            border-color: #38bdf8;
-        }
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(4px);
-            z-index: 2000;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            padding: 16px;
-        }
-        .modal-overlay.active {
-            display: flex;
-        }
-        .modal-box {
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 16px;
-            width: 100%;
-            max-width: 400px;
-            padding: 20px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-            color: #f8fafc;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        .modal-title {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .close-btn {
-            background: none;
-            border: none;
-            color: #94a3b8;
-            font-size: 24px;
-            cursor: pointer;
-            padding: 0 8px;
-        }
-        .form-group {
-            margin-bottom: 12px;
-        }
-        .form-group label {
-            display: block;
-            font-size: 13px;
-            color: #94a3b8;
-            margin-bottom: 6px;
-        }
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 10px 12px;
-            background: #0f172a;
-            border: 1px solid #334155;
-            border-radius: 8px;
-            color: #f8fafc;
-            font-size: 14px;
-            outline: none;
-        }
-        .btn-submit {
-            width: 100%;
-            padding: 12px;
-            background: #2563eb;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 8px;
-        }
-        .btn-map-pick {
-            width: 100%;
-            padding: 10px;
-            background: #334155;
-            color: #e2e8f0;
-            border: 1px solid #475569;
-            border-radius: 8px;
-            font-size: 13px;
-            cursor: pointer;
-            margin-bottom: 12px;
-        }
-        .btn-map-pick.active {
-            background: #d97706;
-            color: white;
-        }
-        .tabs {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 14px;
-            background: #0f172a;
-            padding: 4px;
-            border-radius: 8px;
-        }
-        .tab-btn {
-            flex: 1;
-            background: none;
-            border: none;
-            color: #94a3b8;
-            padding: 8px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            border-radius: 6px;
-        }
-        .tab-btn.active {
-            background: #334155;
-            color: #f8fafc;
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        .error-msg {
-            color: #ef4444;
-            font-size: 12px;
-            margin-top: 8px;
-            display: none;
-        }
+        .btn-ui.active { color: #38bdf8; border-color: #38bdf8; }
+
         .info-popup {
-            position: fixed;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 16px;
-            padding: 16px 20px;
-            z-index: 1500;
-            display: none;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            min-width: 260px;
-            text-align: center;
-            color: #f8fafc;
+            position: fixed; bottom: 24px; left: 50%;
+            transform: translateX(-50%); background: #1e293b;
+            border: 1px solid #334155; border-radius: 16px;
+            padding: 16px 20px; z-index: 1500; display: none;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); min-width: 260px; text-align: center; color: #f8fafc;
         }
-        .info-popup.active {
-            display: block;
+        .info-popup.active { display: block; }
+        .info-popup h3 { font-size: 17px; margin-bottom: 6px; }
+        .info-popup p { font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+        .info-popup .coords { font-family: monospace; color: #38bdf8; background: #0f172a; padding: 4px 8px; border-radius: 6px; display: inline-block; margin-top: 6px; }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px);
+            z-index: 2000; display: none; justify-content: center; align-items: center; padding: 16px;
         }
-        .info-popup h3 {
-            font-size: 17px;
-            margin-bottom: 6px;
+        .modal-overlay.active { display: flex; }
+        .modal-box {
+            background: #1e293b; border: 1px solid #334155; border-radius: 16px;
+            width: 100%; max-width: 400px; padding: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); color: #f8fafc;
+            max-height: 90vh; overflow-y: auto;
         }
-        .info-popup p {
-            font-size: 12px;
-            color: #94a3b8;
-            margin-bottom: 4px;
+        .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+        .close-btn { background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer; padding: 0 8px; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px; }
+        .form-group input, .form-group select {
+            width: 100%; padding: 10px 12px; background: #0f172a; border: 1px solid #334155;
+            border-radius: 8px; color: #f8fafc; font-size: 14px; outline: none;
         }
-        .info-popup .coords {
-            font-family: monospace;
-            color: #38bdf8;
-            background: #0f172a;
-            padding: 4px 8px;
-            border-radius: 6px;
-            display: inline-block;
-            margin-top: 6px;
-        }
+        .btn-submit { width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+        .btn-map-pick { width: 100%; padding: 10px; background: #334155; color: #e2e8f0; border: 1px solid #475569; border-radius: 8px; font-size: 13px; cursor: pointer; margin-bottom: 12px; }
+        .btn-map-pick.active { background: #d97706; color: white; }
+        .tabs { display: flex; gap: 6px; margin-bottom: 14px; background: #0f172a; padding: 4px; border-radius: 8px; }
+        .tab-btn { flex: 1; background: none; border: none; color: #94a3b8; padding: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border-radius: 6px; }
+        .tab-btn.active { background: #334155; color: #f8fafc; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .error-msg { color: #ef4444; font-size: 12px; margin-top: 8px; display: none; }
     </style>
 </head>
 <body>
@@ -332,13 +187,13 @@
         };
 
         function loadData() {
-            const saved = localStorage.getItem("char_canvas_map_v3");
+            const saved = localStorage.getItem("char_canvas_map_v99");
             if (saved) { try { return JSON.parse(saved); } catch (e) {} }
             return defaultData;
         }
 
         function saveData(data) {
-            localStorage.setItem("char_canvas_map_v3", JSON.stringify(data));
+            localStorage.setItem("char_canvas_map_v99", JSON.stringify(data));
         }
 
         let charData = loadData();
@@ -554,4 +409,50 @@
         function showPopup(item) {
             document.getElementById('popTitle').textContent = `${item.emoji} ${item.name}`;
             document.getElementById('popTime').textContent = item.moving ? "🚶 в пути..." : getRelativeTime(item.updatedAt);
-            document.getElementById('popC
+            document.getElementById('popCoords').textContent = `${item.lat.toFixed(5)}, ${item.lng.toFixed(5)}`;
+            infoPopup.classList.add('active');
+        }
+        function hidePopup() { infoPopup.classList.remove('active'); }
+
+        setInterval(() => {
+            const now = Date.now();
+            let changed = false;
+
+            for (let key in charData) {
+                let item = charData[key];
+                if (item.moving) {
+                    const elapsed = now - item.startTime;
+                    const progress = Math.min(elapsed / item.duration, 1);
+
+                    item.lat = item.fromLat + (item.toLat - item.fromLat) * progress;
+                    item.lng = item.fromLng + (item.toLng - item.fromLng) * progress;
+
+                    if (progress >= 1) {
+                        item.moving = false;
+                        item.lat = item.toLat;
+                        item.lng = item.toLng;
+                        item.updatedAt = now;
+                    }
+                    changed = true;
+                }
+            }
+
+            if (changed) saveData(charData);
+            render();
+        }, 100);
+
+        const toggleLayerBtn = document.getElementById('toggleLayerBtn');
+        toggleLayerBtn.addEventListener('click', () => {
+            isSatellite = !isSatellite;
+            if (isSatellite) {
+                toggleLayerBtn.textContent = "🗺️ Обычная";
+                toggleLayerBtn.classList.add('active');
+            } else {
+                toggleLayerBtn.textContent = "🛰️ Спутник";
+                toggleLayerBtn.classList.remove('active');
+            }
+            render();
+        });
+
+        const authModal = document.getElementById('authModal');
+        
